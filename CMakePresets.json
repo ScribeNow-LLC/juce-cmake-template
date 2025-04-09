@@ -1,0 +1,62 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "JUCE Debug",
+      "displayName": "Debug Build",
+      "description": "Enable debug flags and AddressSanitizer",
+      "hidden": false,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_CXX_FLAGS_DEBUG": "",
+        "CMAKE_EXE_LINKER_FLAGS_DEBUG": ""
+      }
+    },
+    {
+      "name": "JUCE Release",
+      "displayName": "Release Build",
+      "description": "Optimized release build with no debug symbols",
+      "hidden": false,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS_RELEASE": "",
+        "CMAKE_EXE_LINKER_FLAGS_RELEASE": ""
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "JUCE Debug",
+      "configurePreset": "JUCE Debug",
+      "description": "Build Debug version",
+      "hidden": false
+    },
+    {
+      "name": "JUCE Release",
+      "configurePreset": "JUCE Release",
+      "description": "Build Release version",
+      "hidden": false
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "JUCE Debug",
+      "configurePreset": "JUCE Debug",
+      "description": "Run tests in Debug mode"
+    },
+    {
+      "name": "JUCE Release",
+      "configurePreset": "JUCE Release",
+      "description": "Run tests in Release mode"
+    }
+  ]
+}
