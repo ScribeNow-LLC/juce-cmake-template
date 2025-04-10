@@ -61,14 +61,8 @@ following:
         - `line 124`
 2. `.github/workflows/pr_check.yml`:
     - **a.** Update the `name` field on `line 1`
-    - **b.** Replace `juce_cmake_plugin_All` with the target name you chose in 
-          Step 1.d.:
-        - ```
-          juce_cmake_plugin_All --> Graphverb_All
-          ```
-        - `line 28`
-        - `line 47`
-        - `line 75`
+    - **b.** Update `PLUGIN_NAME` on `line 11` with the target name you chose in 
+          Step 1.d.
 3. `.github/workflows/release.yml`:
     - TODO - provide instructions for updating this to support code-signing
 

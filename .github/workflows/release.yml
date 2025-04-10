@@ -10,6 +10,7 @@ on:
 
 env:
   BUILD_TYPE: Release
+  PLUGIN_NAME: juce_cmake_plugin
 
 jobs:
   check-tag:
@@ -86,15 +87,15 @@ jobs:
           echo "Signing main binary..."
           codesign --force --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            build/juce_cmake_plugin_artefacts/Release/Standalone/juce_cmake_plugin.app/Contents/MacOS/juce_cmake_plugin
+            build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PLUGIN_NAME }}.app/Contents/MacOS/${{ env.PLUGIN_NAME }}
 
           echo "Signing full app bundle..."
           codesign --force --deep --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            build/juce_cmake_plugin_artefacts/Release/Standalone/juce_cmake_plugin.app
+            build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PLUGIN_NAME }}.app
 
           echo "Verifying signature..."
-          codesign --verify --deep --strict --verbose=4 build/juce_cmake_plugin_artefacts/Release/Standalone/juce_cmake_plugin.app
+          codesign --verify --deep --strict --verbose=4 build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PLUGIN_NAME }}.app
 
       - name: Sign VST3
         run: |
@@ -107,10 +108,10 @@ jobs:
           echo "Signing VST3..."
           codesign --force --deep --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            build/juce_cmake_plugin_artefacts/Release/VST3/juce_cmake_plugin.vst3
+            build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PLUGIN_NAME }}.vst3
 
           echo "Verifying signature..."
-          codesign --verify --deep --strict --verbose=4 build/juce_cmake_plugin_artefacts/Release/VST3/juce_cmake_plugin.vst3
+          codesign --verify --deep --strict --verbose=4 build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PLUGIN_NAME }}.vst3
 
       - name: Sign AU
         run: |
@@ -123,22 +124,22 @@ jobs:
           echo "Signing AU..."
           codesign --force --deep --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            build/juce_cmake_plugin_artefacts/Release/AU/juce_cmake_plugin.component
+            build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PLUGIN_NAME }}.component
 
           echo "Verifying signature..."
-          codesign --verify --deep --strict --verbose=4 build/juce_cmake_plugin_artefacts/Release/AU/juce_cmake_plugin.component
+          codesign --verify --deep --strict --verbose=4 build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PLUGIN_NAME }}.component
 
       - name: Package for notarization
         run: |
           mkdir -p dist/notarization
-          cp -R build/juce_cmake_plugin_artefacts/Release/Standalone/juce_cmake_plugin.app dist/notarization/
-          cp -R build/juce_cmake_plugin_artefacts/Release/VST3/juce_cmake_plugin.vst3 dist/notarization/
-          cp -R build/juce_cmake_plugin_artefacts/Release/AU/juce_cmake_plugin.component dist/notarization/
-          cd dist && zip -r juce_cmake_plugin-notarization.zip notarization
+          cp -R build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PLUGIN_NAME }}.app dist/notarization/
+          cp -R build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PLUGIN_NAME }}.vst3 dist/notarization/
+          cp -R build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PLUGIN_NAME }}.component dist/notarization/
+          cd dist && zip -r ${{ env.PLUGIN_NAME }}-notarization.zip notarization
 
       - name: Notarize App
         run: |
-          xcrun notarytool submit dist/juce_cmake_plugin-notarization.zip \
+          xcrun notarytool submit dist/${{ env.PLUGIN_NAME }}-notarization.zip \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
@@ -149,30 +150,30 @@ jobs:
 
       - name: Staple Notarization Ticket
         run: |
-          xcrun stapler staple build/juce_cmake_plugin_artefacts/Release/Standalone/juce_cmake_plugin.app
-          xcrun stapler staple build/juce_cmake_plugin_artefacts/Release/VST3/juce_cmake_plugin.vst3
-          xcrun stapler staple build/juce_cmake_plugin_artefacts/Release/AU/juce_cmake_plugin.component
-          xcrun stapler validate build/juce_cmake_plugin_artefacts/Release/Standalone/juce_cmake_plugin.app
-          xcrun stapler validate build/juce_cmake_plugin_artefacts/Release/VST3/juce_cmake_plugin.vst3
-          xcrun stapler validate build/juce_cmake_plugin_artefacts/Release/AU/juce_cmake_plugin.component
+          xcrun stapler staple build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PLUGIN_NAME }}.app
+          xcrun stapler staple build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PLUGIN_NAME }}.vst3
+          xcrun stapler staple build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PLUGIN_NAME }}.component
+          xcrun stapler validate build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PLUGIN_NAME }}.app
+          xcrun stapler validate build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PLUGIN_NAME }}.vst3
+          xcrun stapler validate build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PLUGIN_NAME }}.component
 
       - name: Package for release
         run: |
           mkdir -p dist/macos
-          cp -R build/juce_cmake_plugin_artefacts/Release/Standalone/juce_cmake_plugin.app dist/macos/
-          cp -R build/juce_cmake_plugin_artefacts/Release/VST3/juce_cmake_plugin.vst3 dist/macos/
-          cp -R build/juce_cmake_plugin_artefacts/Release/AU/juce_cmake_plugin.component dist/macos/
-          cd dist/macos && zip -r ../juce_cmake_plugin-macos.zip *
+          cp -R build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PLUGIN_NAME }}.app dist/macos/
+          cp -R build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PLUGIN_NAME }}.vst3 dist/macos/
+          cp -R build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PLUGIN_NAME }}.component dist/macos/
+          cd dist/macos && zip -r ../${{ env.PLUGIN_NAME }}-macos.zip *
 
       - name: Verify Gatekeeper
         run: |
-          spctl --assess --type exec --verbose=4 dist/macos/juce_cmake_plugin.app
+          spctl --assess --type exec --verbose=4 dist/macos/${{ env.PLUGIN_NAME }}.app
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: juce_cmake_plugin-macOS
-          path: dist/juce_cmake_plugin-macos.zip
+          name: ${{ env.PLUGIN_NAME }}-macOS
+          path: dist/${{ env.PLUGIN_NAME }}-macos.zip
 
       - name: Cleanup Keychain
         if: always()
@@ -198,21 +199,21 @@ jobs:
         run: cmake -DCMAKE_BUILD_TYPE=Release -G "Ninja" -B build -S .
 
       - name: Build
-        run: cmake --build build --target juce_cmake_plugin_All -j
+        run: cmake --build build --target ${{ env.PLUGIN_NAME }}_All -j
 
       - name: Package
         run: |
           mkdir package
           mkdir dist
-          copy build\juce_cmake_plugin_artefacts\Release\Standalone\juce_cmake_plugin.exe package\
-          copy build\juce_cmake_plugin_artefacts\Release\VST3\juce_cmake_plugin.vst3 package\
-          powershell Compress-Archive -Path package\* -DestinationPath dist\juce_cmake_plugin-windows.zip
+          copy build\juce_cmake_plugin_artefacts\Release\Standalone\${{ env.PLUGIN_NAME }}.exe package\
+          copy build\juce_cmake_plugin_artefacts\Release\VST3\${{ env.PLUGIN_NAME }}.vst3 package\
+          powershell Compress-Archive -Path package\* -DestinationPath dist\${{ env.PLUGIN_NAME }}-windows.zip
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: juce_cmake_plugin-Windows
-          path: dist\juce_cmake_plugin-windows.zip
+          name: ${{ env.PLUGIN_NAME }}-Windows
+          path: dist\${{ env.PLUGIN_NAME }}-windows.zip
 
   build-linux:
     needs: check-tag
@@ -242,21 +243,21 @@ jobs:
                 -G Ninja -B build -S .
 
       - name: Build
-        run: cmake --build build --target juce_cmake_plugin_All -j
+        run: cmake --build build --target ${{ env.PLUGIN_NAME }}_All -j
 
       - name: Package
         run: |
           mkdir -p package
           mkdir -p dist
-          cp -r build/juce_cmake_plugin_artefacts/Release/Standalone/juce_cmake_plugin package/
-          cp -r build/juce_cmake_plugin_artefacts/Release/VST3/juce_cmake_plugin.vst3 package/
-          cd package && zip -r ../dist/juce_cmake_plugin-linux.zip *
+          cp -r build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PLUGIN_NAME }} package/
+          cp -r build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PLUGIN_NAME }}.vst3 package/
+          cd package && zip -r ../dist/${{ env.PLUGIN_NAME }}-linux.zip *
 
       - name: Print MD5 Checksums
         run: |
-          md5sum build/juce_cmake_plugin_artefacts/Release/Standalone/juce_cmake_plugin > app_md5.txt
-          find build/juce_cmake_plugin_artefacts/Release/VST3/juce_cmake_plugin.vst3 -type f -exec md5sum {} \; | sort | md5sum > vst3_md5.txt
-          md5sum dist/juce_cmake_plugin-linux.zip > dist_md5.txt
+          md5sum build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PLUGIN_NAME }} > app_md5.txt
+          find build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PLUGIN_NAME }}.vst3 -type f -exec md5sum {} \; | sort | md5sum > vst3_md5.txt
+          md5sum dist/${{ env.PLUGIN_NAME }}-linux.zip > dist_md5.txt
           cat app_md5.txt
           cat vst3_md5.txt
           cat dist_md5.txt
@@ -264,8 +265,8 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: juce_cmake_plugin-Linux
-          path: dist/juce_cmake_plugin-linux.zip
+          name: ${{ env.PLUGIN_NAME }}-Linux
+          path: dist/${{ env.PLUGIN_NAME }}-linux.zip
 
   release:
     needs: [ build-macos, build-windows, build-linux ]
@@ -274,19 +275,19 @@ jobs:
       - name: Download macOS artifact
         uses: actions/download-artifact@v4
         with:
-          name: juce_cmake_plugin-macOS
+          name: ${{ env.PLUGIN_NAME }}-macOS
           path: artifacts/
 
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
-          name: juce_cmake_plugin-Windows
+          name: ${{ env.PLUGIN_NAME }}-Windows
           path: artifacts/
 
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          name: juce_cmake_plugin-Linux
+          name: ${{ env.PLUGIN_NAME }}-Linux
           path: artifacts/
 
       - name: Display downloaded files
@@ -298,9 +299,9 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           files: |
-            artifacts/juce_cmake_plugin-macos.zip
-            artifacts/juce_cmake_plugin-windows.zip
-            artifacts/juce_cmake_plugin-linux.zip
+            artifacts/${{ env.PLUGIN_NAME }}-macos.zip
+            artifacts/${{ env.PLUGIN_NAME }}-windows.zip
+            artifacts/${{ env.PLUGIN_NAME }}-linux.zip
           draft: false
           prerelease: false
           generate_release_notes: true
