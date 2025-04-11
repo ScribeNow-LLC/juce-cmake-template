@@ -168,10 +168,11 @@ jobs:
           --version ${{ env.VERSION }} \
           ${{ env.PRODUCT_NAME }}_AU.pkg
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications" \
+          --component "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications" \
           --install-location /Applications \
           --identifier ${{ env.BUNDLE_ID }}.app \
           --version ${{ env.VERSION }} \
+          --component-plist Resources/component.plist \
           ${{ env.PRODUCT_NAME }}_App.pkg  
 
       - name: productbuild
