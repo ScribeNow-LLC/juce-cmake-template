@@ -68,10 +68,10 @@ jobs:
           security default-keychain -s build.keychain
           security unlock-keychain -p "build" build.keychain
           security import app_certificate.p12 -k build.keychain -P "$MACOS_APP_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security import installer_certificate.p12 -k build.keychain -P "$MACOS_INSTALLER_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security import installer_certificate.p12 -k build.keychain -P "$MACOS_INSTALLER_CERTIFICATE_PASSWORD" -T /usr/bin/productsign
           security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain
           security list-keychains -s build.keychain
-          security find-identity -v -p codesigning build.keychain
+          security find-identity -v build.keychain
         env:
           MACOS_APP_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
           MACOS_APP_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
@@ -179,7 +179,7 @@ jobs:
       - name: Sign installer
         run: |
           set -e
-          CERT_NAME=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Installer" | sed -E 's/.*"(.+)"$/\1/' | head -n 1)
+          CERT_NAME=$(security find-identity -v build.keychain | grep "Developer ID Installer" | sed -E 's/.*"(.+)"$/\1/' | head -n 1)
           echo "Using cert: $CERT_NAME"
           security unlock-keychain -p "build" build.keychain
           security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain
@@ -240,11 +240,13 @@ jobs:
         run: cmake --build build --target ${{ env.PLUGIN_NAME }}_All -j
 
       - name: Package
+        shell: pwsh
         run: |
           mkdir package
           copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe" package\
           copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\VST3\${{ env.PRODUCT_NAME }}.vst3" package\
-          powershell Compress-Archive -Path package\* -DestinationPath "${{ env.PRODUCT_NAME }} windows.zip"
+          $zipName = "${{ env.PRODUCT_NAME }} windows.zip"
+          Compress-Archive -Path package\* -DestinationPath "$zipName"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
