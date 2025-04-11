@@ -176,7 +176,6 @@ jobs:
           --install-location / \
           --identifier ${{ env.BUNDLE_ID }}.app \
           --version ${{ env.VERSION_NUMBER }} \
-          --exclude "Applications/.keep" \
           ${{ env.PRODUCT_NAME }}_App.pkg  
 
       - name: productbuild
