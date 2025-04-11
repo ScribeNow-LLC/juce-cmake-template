@@ -146,6 +146,7 @@ jobs:
           
           cp -Rp "build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" \
                 "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/"
+          touch "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/.keep"
           cp -Rp "build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" \
                 "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/"
           cp -Rp "build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component" \
@@ -171,10 +172,11 @@ jobs:
           --version ${{ env.VERSION_NUMBER }} \
           ${{ env.PRODUCT_NAME }}_AU.pkg
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications" \
+          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Payload" \
           --install-location / \
           --identifier ${{ env.BUNDLE_ID }}.app \
           --version ${{ env.VERSION_NUMBER }} \
+          --exclude "Applications/.keep" \
           ${{ env.PRODUCT_NAME }}_App.pkg  
 
       - name: productbuild
