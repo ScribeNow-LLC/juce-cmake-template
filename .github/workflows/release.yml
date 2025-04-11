@@ -95,15 +95,15 @@ jobs:
           echo "Signing main binary..."
           codesign --force --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            "build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}"
+            build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}
 
           echo "Signing full app bundle..."
           codesign --force --deep --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            "build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app"
+            build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app
 
           echo "Verifying signature..."
-          codesign --verify --deep --strict --verbose=4 "build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app"
+          codesign --verify --deep --strict --verbose=4 build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app
 
       - name: Sign VST3
         run: |
@@ -116,10 +116,10 @@ jobs:
           echo "Signing VST3..."
           codesign --force --deep --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            "build/${{ env.PLUGIN_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3"
+            build/${{ env.PLUGIN_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3
 
           echo "Verifying signature..."
-          codesign --verify --deep --strict --verbose=4 "build/${{ env.PLUGIN_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3"
+          codesign --verify --deep --strict --verbose=4 build/${{ env.PLUGIN_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3
 
       - name: Sign AU
         run: |
@@ -132,40 +132,40 @@ jobs:
           echo "Signing AU..."
           codesign --force --deep --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            "build/${{ env.PLUGIN_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component"
+            build/${{ env.PLUGIN_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component
 
           echo "Verifying signature..."
-          codesign --verify --deep --strict --verbose=4 "build/${{ env.PLUGIN_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component"
+          codesign --verify --deep --strict --verbose=4 build/${{ env.PLUGIN_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component
 
       - name: Prepare for pkgbuild
         run: |
-          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3"
-          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components"
-          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications"
-          cp -R "build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/"
-          cp -R "build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/"
-          cp -R "build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component" "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/"
+          mkdir -p dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3
+          mkdir -p dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components
+          mkdir -p dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications
+          cp -R build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/
+          cp -R build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3 dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/
+          cp -R build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/
 
       - name: pkgbuild
         run: |
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3" \
+          --root dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3 \
           --install-location /Library/Audio/Plug-Ins/VST3 \
           --identifier ${{ env.BUNDLE_ID }}.vst3 \
           --version ${{ env.VERSION }} \
-          "${{ env.PRODUCT_NAME }} VST3.pkg"
+          ${{ env.PRODUCT_NAME }}_VST3.pkg
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components" \
+          --root dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components \
           --install-location /Library/Audio/Plug-Ins/Components \
           --identifier ${{ env.BUNDLE_ID }}.component \
           --version ${{ env.VERSION }} \
-          "${{ env.PRODUCT_NAME }} AU.pkg"
+          ${{ env.PRODUCT_NAME }}_AU.pkg
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications" \
+          --root dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications \
           --install-location /Applications \
           --identifier ${{ env.BUNDLE_ID }}.app \
           --version ${{ env.VERSION }} \
-          "${{ env.PRODUCT_NAME }} App.pkg"
+          ${{ env.PRODUCT_NAME }}_App.pkg
 
       - name: productbuild
         run: |
@@ -175,7 +175,7 @@ jobs:
           --distribution distribution.xml \
           --resources Resources \
           --package-path . \
-          "${{ env.PRODUCT_NAME }} macOS Installer Unsigned.pkg"
+          ${{ env.PRODUCT_NAME }}_macOS_Installer_Unsigned.pkg
 
       - name: Sign installer
         run: |
@@ -187,15 +187,15 @@ jobs:
 
           echo "Signing Installer..."
           productsign --sign "$CERT_NAME" \
-          "${{ env.PRODUCT_NAME }} macOS Installer Unsigned.pkg" \
-          "${{ env.PRODUCT_NAME }} macOS Installer.pkg"
+          ${{ env.PRODUCT_NAME }}_macOS_Installer_Unsigned.pkg \
+          ${{ env.PRODUCT_NAME }}_macOS_Installer.pkg
 
           echo "Verifying signature..."
-          pkgutil --check-signature "${{ env.PRODUCT_NAME }} macOS Installer.pkg"
+          pkgutil --check-signature ${{ env.PRODUCT_NAME }}_macOS_Installer.pkg
 
       - name: Notarize Installer
         run: |
-          xcrun notarytool submit "${{ env.PRODUCT_NAME }} macOS Installer.pkg" \
+          xcrun notarytool submit ${{ env.PRODUCT_NAME }}_macOS_Installer.pkg \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
@@ -206,13 +206,13 @@ jobs:
 
       - name: Staple Notarization Ticket
         run: |
-          xcrun stapler staple "${{ env.PRODUCT_NAME }} macOS Installer.pkg"
+          xcrun stapler staple ${{ env.PRODUCT_NAME }}_macOS_Installer.pkg
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PLUGIN_NAME }}-macOS
-          path: "${{ env.PRODUCT_NAME }} macOS Installer.pkg"
+          path: ${{ env.PRODUCT_NAME }}_macOS_Installer.pkg
 
       - name: Cleanup Keychain
         if: always()
@@ -244,16 +244,16 @@ jobs:
         shell: pwsh
         run: |
           mkdir package
-          copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe" package\
-          copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\VST3\${{ env.PRODUCT_NAME }}.vst3" package\
-          $zipName = "${{ env.PRODUCT_NAME }} windows.zip"
+          copy build\${{ env.PLUGIN_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe package\
+          copy build\${{ env.PLUGIN_NAME }}_artefacts\Release\VST3\${{ env.PRODUCT_NAME }}.vst3 package\
+          $zipName = "${{ env.PRODUCT_NAME }}_windows.zip"
           Compress-Archive -Path package\* -DestinationPath "$zipName"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PLUGIN_NAME }}-Windows
-          path: "${{ env.PRODUCT_NAME }} windows.zip"
+          path: ${{ env.PRODUCT_NAME }}_windows.zip
 
   build-linux:
     needs: check-tag
@@ -288,15 +288,15 @@ jobs:
       - name: Package
         run: |
           mkdir -p package
-          cp -r "build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}" package/
-          cp -r "build/${{ env.PLUGIN_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" package/
-          cd package && zip -r "../${{ env.PRODUCT_NAME }} linux.zip" *
+          cp -r build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }} package/
+          cp -r build/${{ env.PLUGIN_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3 package/
+          cd package && zip -r ../${{ env.PRODUCT_NAME }}_linux.zip *
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PLUGIN_NAME }}-Linux
-          path: "${{ env.PRODUCT_NAME }} linux.zip"
+          path: ${{ env.PRODUCT_NAME }}_linux.zip
 
   release:
     needs: [ build-macos, build-windows, build-linux ]
@@ -329,9 +329,9 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           files: |
-            "artifacts/${{ env.PRODUCT_NAME }} macOS Installer.pkg"
-            "artifacts/${{ env.PRODUCT_NAME }} windows.zip"
-            "artifacts/${{ env.PRODUCT_NAME }} linux.zip"
+            artifacts/${{ env.PRODUCT_NAME }}_macOS_Installer.pkg
+            artifacts/${{ env.PRODUCT_NAME }}_windows.zip
+            artifacts/${{ env.PRODUCT_NAME }}_linux.zip
           draft: false
           prerelease: false
           generate_release_notes: true
