@@ -170,6 +170,7 @@ jobs:
       - name: productbuild
         run: |
           cp LICENSE Resources/license.txt
+          ls -l
           productbuild \
           --distribution distribution.xml \
           --resources Resources \
