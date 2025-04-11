@@ -1,4 +1,4 @@
-name: JUCE CMake Plugin Release
+name: Release
 
 permissions:
   contents: write
@@ -10,11 +10,6 @@ on:
 
 env:
   BUILD_TYPE: Release
-  PLUGIN_NAME: juce_cmake_plugin
-  PRODUCT_NAME: JUCE_CMake_Plugin
-  COMPANY_NAME: ScribeNow LLC
-  BUNDLE_ID: com.scribenow.juce_cmake_plugin
-  VERSION: 1.0.0
 
 jobs:
   check-tag:
@@ -78,11 +73,19 @@ jobs:
           MACOS_INSTALLER_CERTIFICATE_BASE64: ${{ secrets.MACOS_INSTALLER_CERTIFICATE_BASE64 }}
           MACOS_INSTALLER_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_INSTALLER_CERTIFICATE_PASSWORD }}
 
+      - name: Set Environment Variables
+        run: |
+          TAG_NAME=${{ github.ref_name }}
+          echo "VERSION_NUMBER=${TAG_NAME#v}" >> $GITHUB_ENV
+          echo "BUNDLE_ID=$(sed -n 's/^set(JUCE_BUNDLE_ID[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
+          echo "PRODUCT_NAME=$(sed -n 's/^set(JUCE_PRODUCT_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
+          echo "TARGET_NAME=$(sed -n 's/^set(TARGET_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
+
       - name: Configure
         run: cmake -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -G Ninja -B build -S .
 
       - name: Build
-        run: cmake --build build --target ${{ env.PLUGIN_NAME }}_All -j
+        run: cmake --build build --target ${{ env.TARGET_NAME }}_All -j
 
       - name: Sign Application
         run: |
@@ -95,15 +98,15 @@ jobs:
           echo "Signing main binary..."
           codesign --force --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            "build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}"
+            "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}"
 
           echo "Signing full app bundle..."
           codesign --force --deep --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            "build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app"
+            "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app"
 
           echo "Verifying signature..."
-          codesign --verify --deep --strict --verbose=4 "build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app"
+          codesign --verify --deep --strict --verbose=4 "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app"
 
       - name: Sign VST3
         run: |
@@ -116,10 +119,10 @@ jobs:
           echo "Signing VST3..."
           codesign --force --deep --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            "build/${{ env.PLUGIN_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3"
+            "build/${{ env.TARGET_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3"
 
           echo "Verifying signature..."
-          codesign --verify --deep --strict --verbose=4 "build/${{ env.PLUGIN_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3"
+          codesign --verify --deep --strict --verbose=4 "build/${{ env.TARGET_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3"
 
       - name: Sign AU
         run: |
@@ -132,10 +135,10 @@ jobs:
           echo "Signing AU..."
           codesign --force --deep --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            "build/${{ env.PLUGIN_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component"
+            "build/${{ env.TARGET_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component"
 
           echo "Verifying signature..."
-          codesign --verify --deep --strict --verbose=4 "build/${{ env.PLUGIN_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component"
+          codesign --verify --deep --strict --verbose=4 "build/${{ env.TARGET_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component"
 
       - name: Prepare for pkgbuild
         run: |
@@ -159,19 +162,19 @@ jobs:
           --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3" \
           --install-location /Library/Audio/Plug-Ins/VST3 \
           --identifier ${{ env.BUNDLE_ID }}.vst3 \
-          --version ${{ env.VERSION }} \
+          --version ${{ env.VERSION_NUMBER }} \
           ${{ env.PRODUCT_NAME }}_VST3.pkg
           pkgbuild \
           --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components" \
           --install-location /Library/Audio/Plug-Ins/Components \
           --identifier ${{ env.BUNDLE_ID }}.component \
-          --version ${{ env.VERSION }} \
+          --version ${{ env.VERSION_NUMBER }} \
           ${{ env.PRODUCT_NAME }}_AU.pkg
           pkgbuild \
           --component "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/${{ env.PRODUCT_NAME }}.app" \
           --install-location /Applications \
           --identifier ${{ env.BUNDLE_ID }}.app \
-          --version ${{ env.VERSION }} \
+          --version ${{ env.VERSION_NUMBER }} \
           ${{ env.PRODUCT_NAME }}_App.pkg  
 
       - name: productbuild
@@ -245,14 +248,14 @@ jobs:
 #        run: cmake -DCMAKE_BUILD_TYPE=Release -G "Ninja" -B build -S .
 #
 #      - name: Build
-#        run: cmake --build build --target ${{ env.PLUGIN_NAME }}_All -j
+#        run: cmake --build build --target ${{ env.TARGET_NAME }}_All -j
 #
 #      - name: Package
 #        shell: pwsh
 #        run: |
 #          mkdir package
-#          copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe" package\
-#          copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\VST3\${{ env.PRODUCT_NAME }}.vst3" package\
+#          copy "build\${{ env.TARGET_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe" package\
+#          copy "build\${{ env.TARGET_NAME }}_artefacts\Release\VST3\${{ env.PRODUCT_NAME }}.vst3" package\
 #          $zipName = "${{ env.PRODUCT_NAME }}_windows.zip"
 #          Compress-Archive -Path package\* -DestinationPath "$zipName"
 #
@@ -290,13 +293,13 @@ jobs:
 #                -G Ninja -B build -S .
 #
 #      - name: Build
-#        run: cmake --build build --target ${{ env.PLUGIN_NAME }}_All -j
+#        run: cmake --build build --target ${{ env.TARGET_NAME }}_All -j
 #
 #      - name: Package
 #        run: |
 #          mkdir -p package
-#          cp -r "build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}" package/
-#          cp -r "build/${{ env.PLUGIN_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" package/
+#          cp -r "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}" package/
+#          cp -r "build/${{ env.TARGET_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" package/
 #          cd package && zip -r ../${{ env.PRODUCT_NAME }}_linux.zip *
 #
 #      - name: Upload Artifacts
