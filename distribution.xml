@@ -29,7 +29,7 @@
         <pkg-ref id="com.scribenow.juce_cmake_plugin.app"/>
     </choice>
 
-    <pkg-ref id="com.scribenow.juce_cmake_plugin.vst3" auth="Root">juce_cmake_plugin-VST3.pkg</pkg-ref>
-    <pkg-ref id="com.scribenow.juce_cmake_plugin.au" auth="Root">juce_cmake_plugin-AU.pkg</pkg-ref>
-    <pkg-ref id="com.scribenow.juce_cmake_plugin.app" auth="Root">juce_cmake_plugin-App.pkg</pkg-ref>
+    <pkg-ref id="com.scribenow.juce_cmake_plugin.vst3" auth="Root">JUCE CMake Plugin VST3.pkg</pkg-ref>
+    <pkg-ref id="com.scribenow.juce_cmake_plugin.au" auth="Root">JUCE CMake Plugin AU.pkg</pkg-ref>
+    <pkg-ref id="com.scribenow.juce_cmake_plugin.app" auth="Root">JUCE CMake Plugin App.pkg</pkg-ref>
 </installer-gui-script>
