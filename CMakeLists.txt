@@ -4,6 +4,15 @@ cmake_minimum_required(VERSION 3.30)
 # Set the project name and version
 project(juce_cmake_plugin VERSION 1.0.0)
 
+# Set some information about the JUCE project
+set(JUCE_COMPANY_NAME "Scribe Now LLC")
+set(JUCE_PRODUCT_NAME "JUCE_CMake_Plugin")
+set(JUCE_BUNDLE_ID "com.scribenow.juce_cmake_plugin")
+set(TARGET_NAME "juce_cmake_plugin")
+
+# Enable/Disable Address Sanitizer
+set(ASAN_ON OFF)
+
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 20)
 
@@ -26,7 +35,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     # If building for Debug, use clang-tidy and AddressSanitizer
     find_program(CLANG_TIDY_EXE NAMES "clang-tidy" REQUIRED)
     set(CLANG_TIDY_COMMAND "${CLANG_TIDY_EXE}" "-checks=-*,modernize-*")
-    if (NOT MSVC)
+    if (NOT MSVC AND ASAN_ON)
         set(TARGET_COMPILE_OPTIONS -fsanitize=address -fno-omit-frame-pointer -Wall)
         set(TARGET_LINK_OPTIONS -fsanitize=address)
     else ()
@@ -64,10 +73,10 @@ else ()
 endif ()
 
 # Add a JUCE plugin and define the module settings
-juce_add_plugin(juce_cmake_plugin
-        COMPANY_NAME "Scribe Now LLC"
-        PRODUCT_NAME "JUCE_CMake_Plugin"
-        BUNDLE_ID "com.scribenow.juce_cmake_plugin"
+juce_add_plugin(${TARGET_NAME}
+        COMPANY_NAME ${JUCE_COMPANY_NAME}
+        PRODUCT_NAME ${JUCE_PRODUCT_NAME}
+        BUNDLE_ID ${JUCE_BUNDLE_ID}
         PLUGIN_MANUFACTURER_CODE Juce
         PLUGIN_CODE MJPL
         FORMATS ${PLUGIN_FORMATS}
@@ -79,21 +88,21 @@ juce_add_plugin(juce_cmake_plugin
 )
 
 # Define the plugin's source files
-target_sources(juce_cmake_plugin PRIVATE
+target_sources(${TARGET_NAME} PRIVATE
         src/Processor.cpp
         src/Editor.cpp
 )
 
 # Ensure the inc folder is included in the search path for included files
-target_include_directories(juce_cmake_plugin PRIVATE
+target_include_directories(${TARGET_NAME} PRIVATE
         inc
 )
 
 # Prevent JUCE from including its own module settings since they're defined here
-target_compile_definitions(juce_cmake_plugin PRIVATE JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1)
+target_compile_definitions(${TARGET_NAME} PRIVATE JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1)
 
 # Link the JUCE libraries
-target_link_libraries(juce_cmake_plugin PRIVATE
+target_link_libraries(${TARGET_NAME} PRIVATE
         juce::juce_audio_basics
         juce::juce_audio_processors
         juce::juce_audio_utils
@@ -102,7 +111,7 @@ target_link_libraries(juce_cmake_plugin PRIVATE
 
 # If we're building for Debug, make sure clang-tidy is used
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set_target_properties(juce_cmake_plugin PROPERTIES
+    set_target_properties(${TARGET_NAME} PROPERTIES
             CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}"
     )
 endif ()
@@ -111,15 +120,15 @@ endif ()
 # These need to be individually attached to each executable target
 foreach(format IN LISTS PLUGIN_FORMATS)
     string(TOUPPER ${format} UPPER_FORMAT)
-    set(target_name "juce_cmake_plugin_${format}")
-    if (TARGET ${target_name})
-        target_compile_options(${target_name} PRIVATE ${TARGET_COMPILE_OPTIONS})
-        target_link_options(${target_name} PRIVATE ${TARGET_LINK_OPTIONS})
+    set(component_name "${TARGET_NAME}_${format}")
+    if (TARGET ${component_name})
+        target_compile_options(${component_name} PRIVATE ${TARGET_COMPILE_OPTIONS})
+        target_link_options(${component_name} PRIVATE ${TARGET_LINK_OPTIONS})
     endif ()
 endforeach()
 
 # Link libcurl on Linux only
 if (UNIX AND NOT APPLE)
     find_package(CURL REQUIRED)
-    target_link_libraries(juce_cmake_plugin PRIVATE CURL::libcurl)
+    target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
 endif ()
