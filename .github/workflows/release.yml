@@ -11,7 +11,7 @@ on:
 env:
   BUILD_TYPE: Release
   PLUGIN_NAME: juce_cmake_plugin
-  PRODUCT_NAME: JUCE CMake Plugin
+  PRODUCT_NAME: JUCE_CMake_Plugin
   COMPANY_NAME: ScribeNow LLC
   BUNDLE_ID: com.scribenow.juce_cmake_plugin
   VERSION: 1.0.0
