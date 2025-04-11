@@ -142,15 +142,17 @@ jobs:
         run: |
           mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3"
           mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components"
-          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications"
+          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications"
+          
           cp -Rp "build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" \
-                "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/"
+                "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/"
           cp -Rp "build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" \
                 "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/"
           cp -Rp "build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component" \
                 "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/"
-          chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/${{ env.PRODUCT_NAME }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}"
-          chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/${{ env.PRODUCT_NAME }}.app"
+          
+          chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/${{ env.PRODUCT_NAME }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}"
+          chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/${{ env.PRODUCT_NAME }}.app"
           chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/${{ env.PRODUCT_NAME }}.vst3/Contents/MacOS/${{ env.PRODUCT_NAME }}"
           chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/${{ env.PRODUCT_NAME }}.component/Contents/MacOS/${{ env.PRODUCT_NAME }}"
 
@@ -169,8 +171,8 @@ jobs:
           --version ${{ env.VERSION_NUMBER }} \
           ${{ env.PRODUCT_NAME }}_AU.pkg
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications" \
-          --install-location /Applications \
+          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications" \
+          --install-location / \
           --identifier ${{ env.BUNDLE_ID }}.app \
           --version ${{ env.VERSION_NUMBER }} \
           ${{ env.PRODUCT_NAME }}_App.pkg  
