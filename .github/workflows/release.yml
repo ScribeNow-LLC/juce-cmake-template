@@ -171,7 +171,7 @@ jobs:
           --version ${{ env.VERSION_NUMBER }} \
           ${{ env.PRODUCT_NAME }}_AU.pkg
           pkgbuild \
-          --component "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/${{ env.PRODUCT_NAME }}.app" \
+          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/${{ env.PRODUCT_NAME }}.app" \
           --install-location /Applications \
           --identifier ${{ env.BUNDLE_ID }}.app \
           --version ${{ env.VERSION_NUMBER }} \
