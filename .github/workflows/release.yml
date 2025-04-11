@@ -142,10 +142,13 @@ jobs:
         run: |
           mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3"
           mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components"
-          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications"
-          cp -R "build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/"
-          cp -R "build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/"
-          cp -R "build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component" "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/"
+          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root"
+          cp -R "build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" \
+                "dist/${{ env.PRODUCT_NAME }}_Installer/Root/"
+          cp -R "build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" \
+                "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/"
+          cp -R "build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component" \
+                "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/"
 
       - name: pkgbuild
         run: |
@@ -162,11 +165,11 @@ jobs:
           --version ${{ env.VERSION }} \
           ${{ env.PRODUCT_NAME_UNDERSCORE }}_AU.pkg
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications" \
+          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root" \
           --install-location /Applications \
           --identifier ${{ env.BUNDLE_ID }}.app \
           --version ${{ env.VERSION }} \
-          ${{ env.PRODUCT_NAME_UNDERSCORE }}_App.pkg
+          ${{ env.PRODUCT_NAME_UNDERSCORE }}_App.pkg  
 
       - name: productbuild
         run: |
@@ -245,7 +248,7 @@ jobs:
         shell: pwsh
         run: |
           mkdir package
-          copy build\${{ env.PLUGIN_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe package\
+          copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe" package\
           copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\VST3\${{ env.PRODUCT_NAME }}.vst3" package\
           $zipName = "${{ env.PRODUCT_NAME_UNDERSCORE }}_windows.zip"
           Compress-Archive -Path package\* -DestinationPath "$zipName"
