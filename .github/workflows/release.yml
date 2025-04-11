@@ -65,8 +65,6 @@ jobs:
           security import app_certificate.p12 -k build.keychain -P "$MACOS_APP_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security import installer_certificate.p12 -k build.keychain -P "$MACOS_INSTALLER_CERTIFICATE_PASSWORD" -T /usr/bin/productsign
           security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain
-          security list-keychains -s build.keychain
-          security find-identity -v build.keychain
         env:
           MACOS_APP_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
           MACOS_APP_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
@@ -92,8 +90,8 @@ jobs:
           set -e
           CERT_NAME=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | sed -E 's/.*"(.+)"$/\1/' | head -n 1)
           echo "Using cert: $CERT_NAME"
-          security unlock-keychain -p "build" build.keychain
-          security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain
+          security unlock-keychain -p "build" build.keychain > /dev/null 2>&1
+          security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain > /dev/null 2>&1
 
           echo "Signing main binary..."
           codesign --force --verbose --sign "$CERT_NAME" \
@@ -113,8 +111,8 @@ jobs:
           set -e
           CERT_NAME=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | sed -E 's/.*"(.+)"$/\1/' | head -n 1)
           echo "Using cert: $CERT_NAME"
-          security unlock-keychain -p "build" build.keychain
-          security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain
+          security unlock-keychain -p "build" build.keychain > /dev/null 2>&1
+          security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain > /dev/null 2>&1
 
           echo "Signing VST3..."
           codesign --force --deep --verbose --sign "$CERT_NAME" \
@@ -129,8 +127,8 @@ jobs:
           set -e
           CERT_NAME=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | sed -E 's/.*"(.+)"$/\1/' | head -n 1)
           echo "Using cert: $CERT_NAME"
-          security unlock-keychain -p "build" build.keychain
-          security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain
+          security unlock-keychain -p "build" build.keychain > /dev/null 2>&1
+          security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain > /dev/null 2>&1
 
           echo "Signing AU..."
           codesign --force --deep --verbose --sign "$CERT_NAME" \
@@ -171,7 +169,7 @@ jobs:
           --version ${{ env.VERSION_NUMBER }} \
           ${{ env.PRODUCT_NAME }}_AU.pkg
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/${{ env.PRODUCT_NAME }}.app" \
+          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications" \
           --install-location /Applications \
           --identifier ${{ env.BUNDLE_ID }}.app \
           --version ${{ env.VERSION_NUMBER }} \
@@ -192,8 +190,8 @@ jobs:
           set -e
           CERT_NAME=$(security find-identity -v build.keychain | grep "Developer ID Installer" | sed -E 's/.*"(.+)"$/\1/' | head -n 1)
           echo "Using cert: $CERT_NAME"
-          security unlock-keychain -p "build" build.keychain
-          security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain
+          security unlock-keychain -p "build" build.keychain > /dev/null 2>&1
+          security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain > /dev/null 2>&1
 
           echo "Signing Installer..."
           productsign --sign "$CERT_NAME" \
@@ -210,9 +208,6 @@ jobs:
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
             --wait --output-format json > notarization_result.json
-
-          echo "Notarization result:"
-          cat notarization_result.json
 
       - name: Staple Notarization Ticket
         run: |
