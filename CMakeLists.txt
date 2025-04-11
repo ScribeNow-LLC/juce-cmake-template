@@ -65,9 +65,9 @@ endif ()
 
 # Add a JUCE plugin and define the module settings
 juce_add_plugin(juce_cmake_plugin
-        COMPANY_NAME ""
-        PRODUCT_NAME ""
-        BUNDLE_ID ""
+        COMPANY_NAME "Scribe Now LLC"
+        PRODUCT_NAME "JUCE CMake Plugin"
+        BUNDLE_ID "com.scribenow.juce_cmake_plugin"
         PLUGIN_MANUFACTURER_CODE Juce
         PLUGIN_CODE MJPL
         FORMATS ${PLUGIN_FORMATS}
