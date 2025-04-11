@@ -227,121 +227,121 @@ jobs:
         run: |
           security delete-keychain build.keychain
 
-  build-windows:
-    needs: check-tag
-    if: needs.check-tag.outputs.is_latest == 'true'
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Ninja
-        run: choco install ninja
-
-      - name: Set up MSVC Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Configure with MSVC
-        run: cmake -DCMAKE_BUILD_TYPE=Release -G "Ninja" -B build -S .
-
-      - name: Build
-        run: cmake --build build --target ${{ env.PLUGIN_NAME }}_All -j
-
-      - name: Package
-        shell: pwsh
-        run: |
-          mkdir package
-          copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe" package\
-          copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\VST3\${{ env.PRODUCT_NAME }}.vst3" package\
-          $zipName = "${{ env.PRODUCT_NAME }}_windows.zip"
-          Compress-Archive -Path package\* -DestinationPath "$zipName"
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.PRODUCT_NAME }}-Windows
-          path: ${{ env.PRODUCT_NAME }}_windows.zip
-
-  build-linux:
-    needs: check-tag
-    if: needs.check-tag.outputs.is_latest == 'true'
-    runs-on: ubuntu-22.04
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y \
-            cmake ninja-build build-essential \
-            libasound2-dev libjack-jackd2-dev \
-            libx11-dev libfreetype6-dev libfontconfig1-dev \
-            libgl1-mesa-dev libcurl4-openssl-dev \
-            libxrandr-dev libxinerama-dev libxcursor-dev \
-            libxcomposite-dev libxext-dev \
-            libgtk2.0-dev
-
-      - name: Configure
-        run: |
-          cmake -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-                -DCMAKE_EXE_LINKER_FLAGS="-lcurl" \
-                -G Ninja -B build -S .
-
-      - name: Build
-        run: cmake --build build --target ${{ env.PLUGIN_NAME }}_All -j
-
-      - name: Package
-        run: |
-          mkdir -p package
-          cp -r "build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}" package/
-          cp -r "build/${{ env.PLUGIN_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" package/
-          cd package && zip -r ../${{ env.PRODUCT_NAME }}_linux.zip *
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.PRODUCT_NAME }}-Linux
-          path: ${{ env.PRODUCT_NAME }}_linux.zip
-
-  release:
-    needs: [ build-macos, build-windows, build-linux ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download macOS artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.PRODUCT_NAME }}-macOS
-          path: artifacts/
-
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.PRODUCT_NAME }}-Windows
-          path: artifacts/
-
-      - name: Download Linux artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.PRODUCT_NAME }}-Linux
-          path: artifacts/
-
-      - name: Display downloaded files
-        run: ls -R artifacts
-
-      - name: Create GitHub Release and Upload Assets
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          files: |
-            artifacts/${{ env.PRODUCT_NAME }}_macOS.pkg
-            artifacts/${{ env.PRODUCT_NAME }}_windows.zip
-            artifacts/${{ env.PRODUCT_NAME }}_linux.zip
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#  build-windows:
+#    needs: check-tag
+#    if: needs.check-tag.outputs.is_latest == 'true'
+#    runs-on: windows-latest
+#
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Install Ninja
+#        run: choco install ninja
+#
+#      - name: Set up MSVC Developer Command Prompt
+#        uses: ilammy/msvc-dev-cmd@v1
+#
+#      - name: Configure with MSVC
+#        run: cmake -DCMAKE_BUILD_TYPE=Release -G "Ninja" -B build -S .
+#
+#      - name: Build
+#        run: cmake --build build --target ${{ env.PLUGIN_NAME }}_All -j
+#
+#      - name: Package
+#        shell: pwsh
+#        run: |
+#          mkdir package
+#          copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe" package\
+#          copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\VST3\${{ env.PRODUCT_NAME }}.vst3" package\
+#          $zipName = "${{ env.PRODUCT_NAME }}_windows.zip"
+#          Compress-Archive -Path package\* -DestinationPath "$zipName"
+#
+#      - name: Upload Artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: ${{ env.PRODUCT_NAME }}-Windows
+#          path: ${{ env.PRODUCT_NAME }}_windows.zip
+#
+#  build-linux:
+#    needs: check-tag
+#    if: needs.check-tag.outputs.is_latest == 'true'
+#    runs-on: ubuntu-22.04
+#
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Install Dependencies
+#        run: |
+#          sudo apt update
+#          sudo apt install -y \
+#            cmake ninja-build build-essential \
+#            libasound2-dev libjack-jackd2-dev \
+#            libx11-dev libfreetype6-dev libfontconfig1-dev \
+#            libgl1-mesa-dev libcurl4-openssl-dev \
+#            libxrandr-dev libxinerama-dev libxcursor-dev \
+#            libxcomposite-dev libxext-dev \
+#            libgtk2.0-dev
+#
+#      - name: Configure
+#        run: |
+#          cmake -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+#                -DCMAKE_EXE_LINKER_FLAGS="-lcurl" \
+#                -G Ninja -B build -S .
+#
+#      - name: Build
+#        run: cmake --build build --target ${{ env.PLUGIN_NAME }}_All -j
+#
+#      - name: Package
+#        run: |
+#          mkdir -p package
+#          cp -r "build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}" package/
+#          cp -r "build/${{ env.PLUGIN_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" package/
+#          cd package && zip -r ../${{ env.PRODUCT_NAME }}_linux.zip *
+#
+#      - name: Upload Artifacts
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: ${{ env.PRODUCT_NAME }}-Linux
+#          path: ${{ env.PRODUCT_NAME }}_linux.zip
+#
+#  release:
+#    needs: [ build-macos, build-windows, build-linux ]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Download macOS artifact
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: ${{ env.PRODUCT_NAME }}-macOS
+#          path: artifacts/
+#
+#      - name: Download Windows artifact
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: ${{ env.PRODUCT_NAME }}-Windows
+#          path: artifacts/
+#
+#      - name: Download Linux artifact
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: ${{ env.PRODUCT_NAME }}-Linux
+#          path: artifacts/
+#
+#      - name: Display downloaded files
+#        run: ls -R artifacts
+#
+#      - name: Create GitHub Release and Upload Assets
+#        uses: softprops/action-gh-release@v1
+#        with:
+#          tag_name: ${{ github.ref_name }}
+#          name: ${{ github.ref_name }}
+#          files: |
+#            artifacts/${{ env.PRODUCT_NAME }}_macOS.pkg
+#            artifacts/${{ env.PRODUCT_NAME }}_windows.zip
+#            artifacts/${{ env.PRODUCT_NAME }}_linux.zip
+#          draft: false
+#          prerelease: false
+#          generate_release_notes: true
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

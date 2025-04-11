@@ -7,13 +7,13 @@
     <choices-outline>
         <line choice="default"/>
         <line choice="vst3"/>
-        <line choice="au"/>
+        <line choice="component"/>
         <line choice="app"/>
     </choices-outline>
 
     <choice id="default" title="All Components" description="Install all components by default">
         <pkg-ref id="com.scribenow.juce_cmake_plugin.vst3"/>
-        <pkg-ref id="com.scribenow.juce_cmake_plugin.au"/>
+        <pkg-ref id="com.scribenow.juce_cmake_plugin.component"/>
         <pkg-ref id="com.scribenow.juce_cmake_plugin.app"/>
     </choice>
 
@@ -21,8 +21,8 @@
         <pkg-ref id="com.scribenow.juce_cmake_plugin.vst3"/>
     </choice>
 
-    <choice id="au" title="AU Plugin" description="Install the Audio Unit (AU) plugin">
-        <pkg-ref id="com.scribenow.juce_cmake_plugin.au"/>
+    <choice id="component" title="AU Plugin" description="Install the Audio Unit (AU) plugin">
+        <pkg-ref id="com.scribenow.juce_cmake_plugin.component"/>
     </choice>
 
     <choice id="app" title="Standalone App" description="Install the standalone application">
@@ -30,6 +30,6 @@
     </choice>
 
     <pkg-ref id="com.scribenow.juce_cmake_plugin.vst3" auth="Root">JUCE_CMake_Plugin_VST3.pkg</pkg-ref>
-    <pkg-ref id="com.scribenow.juce_cmake_plugin.au" auth="Root">JUCE_CMake_Plugin_AU.pkg</pkg-ref>
-    <pkg-ref id="com.scribenow.juce_cmake_plugin.app" auth="Root">JUCE_CMake_Plugin_App.pkg</pkg-ref>
+    <pkg-ref id="com.scribenow.juce_cmake_plugin.component" auth="Root">JUCE_CMake_Plugin_AU.pkg</pkg-ref>
+    <pkg-ref id="com.scribenow.juce_cmake_plugin.app">JUCE_CMake_Plugin_App.pkg</pkg-ref>
 </installer-gui-script>
