@@ -174,7 +174,7 @@ jobs:
           --distribution distribution.xml \
           --resources Resources \
           --package-path . \
-          "${{ env.PRODUCT_NAME }} macOS Installer.pkg"
+          "${{ env.PRODUCT_NAME }} macOS Installer Unsigned.pkg"
 
       - name: Sign installer
         run: |
@@ -185,12 +185,12 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain
 
           echo "Signing Installer..."
-          codesign --force --deep --verbose --sign "$CERT_NAME" \
-            --options runtime --timestamp \
-            "${{ env.PRODUCT_NAME }} macOS Installer.pkg"
+          productsign --sign "$CERT_NAME" \
+          "${{ env.PRODUCT_NAME }} macOS Installer Unsigned.pkg" \
+          "${{ env.PRODUCT_NAME }} macOS Installer.pkg"
 
           echo "Verifying signature..."
-          codesign --verify --deep --strict --verbose=4 "${{ env.PRODUCT_NAME }} macOS Installer.pkg"
+          pkgutil --check-signature "${{ env.PRODUCT_NAME }} macOS Installer.pkg"
 
       - name: Notarize Installer
         run: |
