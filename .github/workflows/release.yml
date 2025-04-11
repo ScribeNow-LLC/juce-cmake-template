@@ -11,8 +11,7 @@ on:
 env:
   BUILD_TYPE: Release
   PLUGIN_NAME: juce_cmake_plugin
-  PRODUCT_NAME: JUCE CMake Plugin
-  PRODUCT_NAME_UNDERSCORE: JUCE_CMake_Plugin
+  PRODUCT_NAME: JUCE_CMake_Plugin
   COMPANY_NAME: ScribeNow LLC
   BUNDLE_ID: com.scribenow.juce_cmake_plugin
   VERSION: 1.0.0
@@ -161,19 +160,19 @@ jobs:
           --install-location /Library/Audio/Plug-Ins/VST3 \
           --identifier ${{ env.BUNDLE_ID }}.vst3 \
           --version ${{ env.VERSION }} \
-          ${{ env.PRODUCT_NAME_UNDERSCORE }}_VST3.pkg
+          ${{ env.PRODUCT_NAME }}_VST3.pkg
           pkgbuild \
           --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components" \
           --install-location /Library/Audio/Plug-Ins/Components \
           --identifier ${{ env.BUNDLE_ID }}.component \
           --version ${{ env.VERSION }} \
-          ${{ env.PRODUCT_NAME_UNDERSCORE }}_AU.pkg
+          ${{ env.PRODUCT_NAME }}_AU.pkg
           pkgbuild \
           --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications" \
           --install-location /Applications \
           --identifier ${{ env.BUNDLE_ID }}.app \
           --version ${{ env.VERSION }} \
-          ${{ env.PRODUCT_NAME_UNDERSCORE }}_App.pkg  
+          ${{ env.PRODUCT_NAME }}_App.pkg  
 
       - name: productbuild
         run: |
@@ -183,7 +182,7 @@ jobs:
           --distribution distribution.xml \
           --resources Resources \
           --package-path . \
-          ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS_Unsigned.pkg
+          ${{ env.PRODUCT_NAME }}_macOS_Unsigned.pkg
 
       - name: Sign installer
         run: |
@@ -195,15 +194,15 @@ jobs:
 
           echo "Signing Installer..."
           productsign --sign "$CERT_NAME" \
-          ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS_Unsigned.pkg \
-          ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS.pkg
+          ${{ env.PRODUCT_NAME }}_macOS_Unsigned.pkg \
+          ${{ env.PRODUCT_NAME }}_macOS.pkg
 
           echo "Verifying signature..."
-          pkgutil --check-signature ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS.pkg
+          pkgutil --check-signature ${{ env.PRODUCT_NAME }}_macOS.pkg
 
       - name: Notarize Installer
         run: |
-          xcrun notarytool submit ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS.pkg \
+          xcrun notarytool submit ${{ env.PRODUCT_NAME }}_macOS.pkg \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
@@ -214,13 +213,13 @@ jobs:
 
       - name: Staple Notarization Ticket
         run: |
-          xcrun stapler staple ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS.pkg
+          xcrun stapler staple ${{ env.PRODUCT_NAME }}_macOS.pkg
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME_UNDERSCORE }}-macOS
-          path: ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS.pkg
+          name: ${{ env.PRODUCT_NAME }}-macOS
+          path: ${{ env.PRODUCT_NAME }}_macOS.pkg
 
       - name: Cleanup Keychain
         if: always()
@@ -254,14 +253,14 @@ jobs:
           mkdir package
           copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe" package\
           copy "build\${{ env.PLUGIN_NAME }}_artefacts\Release\VST3\${{ env.PRODUCT_NAME }}.vst3" package\
-          $zipName = "${{ env.PRODUCT_NAME_UNDERSCORE }}_windows.zip"
+          $zipName = "${{ env.PRODUCT_NAME }}_windows.zip"
           Compress-Archive -Path package\* -DestinationPath "$zipName"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME_UNDERSCORE }}-Windows
-          path: ${{ env.PRODUCT_NAME_UNDERSCORE }}_windows.zip
+          name: ${{ env.PRODUCT_NAME }}-Windows
+          path: ${{ env.PRODUCT_NAME }}_windows.zip
 
   build-linux:
     needs: check-tag
@@ -298,13 +297,13 @@ jobs:
           mkdir -p package
           cp -r "build/${{ env.PLUGIN_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}" package/
           cp -r "build/${{ env.PLUGIN_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" package/
-          cd package && zip -r ../${{ env.PRODUCT_NAME_UNDERSCORE }}_linux.zip *
+          cd package && zip -r ../${{ env.PRODUCT_NAME }}_linux.zip *
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME_UNDERSCORE }}-Linux
-          path: ${{ env.PRODUCT_NAME_UNDERSCORE }}_linux.zip
+          name: ${{ env.PRODUCT_NAME }}-Linux
+          path: ${{ env.PRODUCT_NAME }}_linux.zip
 
   release:
     needs: [ build-macos, build-windows, build-linux ]
@@ -313,19 +312,19 @@ jobs:
       - name: Download macOS artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME_UNDERSCORE }}-macOS
+          name: ${{ env.PRODUCT_NAME }}-macOS
           path: artifacts/
 
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME_UNDERSCORE }}-Windows
+          name: ${{ env.PRODUCT_NAME }}-Windows
           path: artifacts/
 
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME_UNDERSCORE }}-Linux
+          name: ${{ env.PRODUCT_NAME }}-Linux
           path: artifacts/
 
       - name: Display downloaded files
@@ -337,9 +336,9 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           files: |
-            artifacts/${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS.pkg
-            artifacts/${{ env.PRODUCT_NAME_UNDERSCORE }}_windows.zip
-            artifacts/${{ env.PRODUCT_NAME_UNDERSCORE }}_linux.zip
+            artifacts/${{ env.PRODUCT_NAME }}_macOS.pkg
+            artifacts/${{ env.PRODUCT_NAME }}_windows.zip
+            artifacts/${{ env.PRODUCT_NAME }}_linux.zip
           draft: false
           prerelease: false
           generate_release_notes: true
