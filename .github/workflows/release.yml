@@ -142,9 +142,9 @@ jobs:
         run: |
           mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3"
           mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components"
-          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root"
+          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications"
           cp -R "build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" \
-                "dist/${{ env.PRODUCT_NAME }}_Installer/Root/"
+                "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/"
           cp -R "build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" \
                 "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/"
           cp -R "build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component" \
@@ -165,7 +165,7 @@ jobs:
           --version ${{ env.VERSION }} \
           ${{ env.PRODUCT_NAME_UNDERSCORE }}_AU.pkg
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root" \
+          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications" \
           --install-location /Applications \
           --identifier ${{ env.BUNDLE_ID }}.app \
           --version ${{ env.VERSION }} \
@@ -179,7 +179,7 @@ jobs:
           --distribution distribution.xml \
           --resources Resources \
           --package-path . \
-          ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS_Installer_Unsigned.pkg
+          ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS_Unsigned.pkg
 
       - name: Sign installer
         run: |
@@ -191,15 +191,15 @@ jobs:
 
           echo "Signing Installer..."
           productsign --sign "$CERT_NAME" \
-          ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS_Installer_Unsigned.pkg \
-          ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS_Installer.pkg
+          ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS_Unsigned.pkg \
+          ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS.pkg
 
           echo "Verifying signature..."
-          pkgutil --check-signature ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS_Installer.pkg
+          pkgutil --check-signature ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS.pkg
 
       - name: Notarize Installer
         run: |
-          xcrun notarytool submit ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS_Installer.pkg \
+          xcrun notarytool submit ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS.pkg \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
@@ -210,13 +210,13 @@ jobs:
 
       - name: Staple Notarization Ticket
         run: |
-          xcrun stapler staple ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS_Installer.pkg
+          xcrun stapler staple ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS.pkg
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PRODUCT_NAME_UNDERSCORE }}-macOS
-          path: ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS_Installer.pkg
+          path: ${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS.pkg
 
       - name: Cleanup Keychain
         if: always()
@@ -333,7 +333,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           files: |
-            artifacts/${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS_Installer.pkg
+            artifacts/${{ env.PRODUCT_NAME_UNDERSCORE }}_macOS.pkg
             artifacts/${{ env.PRODUCT_NAME_UNDERSCORE }}_windows.zip
             artifacts/${{ env.PRODUCT_NAME_UNDERSCORE }}_linux.zip
           draft: false
