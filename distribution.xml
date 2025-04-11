@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="1">
-    <title>MyPlugin Installer</title>
+    <title>JUCE CMake Plugin Installer</title>
     <background file="background.png" alignment="bottomleft" scaling="tofit"/>
     <welcome file="welcome.html"/>
     <license file="license.txt"/>
