@@ -106,6 +106,18 @@ jobs:
           echo "Verifying signature..."
           codesign --verify --deep --strict --verbose=4 "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app"
 
+      - name: Notarize Application
+        run: |
+          xcrun notarytool submit "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" \
+            --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --wait --output-format json > application_notarization_result.json
+
+      - name: Staple Notarization Ticket to Application
+        run: |
+          xcrun stapler staple "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app"
+
       - name: Sign VST3
         run: |
           set -e
@@ -121,6 +133,18 @@ jobs:
 
           echo "Verifying signature..."
           codesign --verify --deep --strict --verbose=4 "build/${{ env.TARGET_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3"
+
+      - name: Notarize VST3
+        run: |
+          xcrun notarytool submit "build/${{ env.TARGET_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" \
+            --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --wait --output-format json > vst3_notarization_result.json
+
+      - name: Staple Notarization Ticket to VST3
+        run: |
+          xcrun stapler staple "build/${{ env.TARGET_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3"
 
       - name: Sign AU
         run: |
@@ -138,22 +162,33 @@ jobs:
           echo "Verifying signature..."
           codesign --verify --deep --strict --verbose=4 "build/${{ env.TARGET_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component"
 
+      - name: Notarize AU
+        run: |
+          xcrun notarytool submit "build/${{ env.TARGET_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component" \
+            --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --wait --output-format json > au_notarization_result.json
+
+      - name: Staple Notarization Ticket to AU
+        run: |
+          xcrun stapler staple "build/${{ env.TARGET_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component"
+
       - name: Prepare for pkgbuild
         run: |
           mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3"
           mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components"
-          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications"
+          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications"
           
           cp -Rp "build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" \
-                "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/"
-          touch "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/.keep"
+                "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/"
           cp -Rp "build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" \
                 "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/"
           cp -Rp "build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component" \
                 "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/"
           
-          chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/${{ env.PRODUCT_NAME }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}"
-          chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/${{ env.PRODUCT_NAME }}.app"
+          chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/${{ env.PRODUCT_NAME }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}"
+          chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications/${{ env.PRODUCT_NAME }}.app"
           chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/${{ env.PRODUCT_NAME }}.vst3/Contents/MacOS/${{ env.PRODUCT_NAME }}"
           chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/${{ env.PRODUCT_NAME }}.component/Contents/MacOS/${{ env.PRODUCT_NAME }}"
 
@@ -164,24 +199,84 @@ jobs:
           --install-location /Library/Audio/Plug-Ins/VST3 \
           --identifier ${{ env.BUNDLE_ID }}.vst3 \
           --version ${{ env.VERSION_NUMBER }} \
-          ${{ env.PRODUCT_NAME }}_VST3.pkg
+          ${{ env.PRODUCT_NAME }}_VST3_unsigned.pkg
           pkgbuild \
           --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components" \
           --install-location /Library/Audio/Plug-Ins/Components \
           --identifier ${{ env.BUNDLE_ID }}.component \
           --version ${{ env.VERSION_NUMBER }} \
-          ${{ env.PRODUCT_NAME }}_AU.pkg
+          ${{ env.PRODUCT_NAME }}_AU_unsigned.pkg
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Payload" \
-          --install-location / \
+          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Applications" \
+          --install-location /Applications \
           --identifier ${{ env.BUNDLE_ID }}.app \
           --version ${{ env.VERSION_NUMBER }} \
-          ${{ env.PRODUCT_NAME }}_App.pkg  
+          ${{ env.PRODUCT_NAME }}_App_unsigned.pkg 
+
+      - name: Sign individual installers
+        run: |
+          set -e
+          CERT_NAME=$(security find-identity -v build.keychain | grep "Developer ID Installer" | sed -E 's/.*"(.+)"$/\1/' | head -n 1)
+          echo "Using cert: $CERT_NAME"
+          security unlock-keychain -p "build" build.keychain > /dev/null 2>&1
+          security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain > /dev/null 2>&1
+
+          echo "Signing VST3 Installer..."
+          productsign --sign "$CERT_NAME" \
+          ${{ env.PRODUCT_NAME }}_VST3_unsigned.pkg \
+          ${{ env.PRODUCT_NAME }}_VST3.pkg
+          
+          echo "Signing AU Installer..."
+          productsign --sign "$CERT_NAME" \
+          ${{ env.PRODUCT_NAME }}_AU_unsigned.pkg \
+          ${{ env.PRODUCT_NAME }}_AU.pkg
+          
+          echo "Signing Application Installer..."
+          productsign --sign "$CERT_NAME" \
+          ${{ env.PRODUCT_NAME }}_App_unsigned.pkg \
+          ${{ env.PRODUCT_NAME }}_App.pkg
+
+          echo "Verifying VST3 Installer signature..."
+          pkgutil --check-signature ${{ env.PRODUCT_NAME }}_VST3.pkg
+          
+          echo "Verifying AU Installer signature..."
+          pkgutil --check-signature ${{ env.PRODUCT_NAME }}_AU.pkg
+          
+          echo "Verifying Application Installer signature..."
+          pkgutil --check-signature ${{ env.PRODUCT_NAME }}_App.pkg
+
+      - name: Notarize Individual Installers
+        run: |
+          echo "Notarizing VST3 Installer..."
+          xcrun notarytool submit ${{ env.PRODUCT_NAME }}_VST3.pkg \
+            --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --wait --output-format json > vst3_installer_notarization_result.json
+          
+          echo "Notarizing AU Installer..."
+          xcrun notarytool submit ${{ env.PRODUCT_NAME }}_AU.pkg \
+            --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --wait --output-format json > au_installer_notarization_result.json
+          
+          echo "Notarizing Application Installer..."
+          xcrun notarytool submit ${{ env.PRODUCT_NAME }}_App.pkg \
+            --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --wait --output-format json > app_installer_notarization_result.json
+
+      - name: Staple Notarization Tickets
+        run: |
+          xcrun stapler staple ${{ env.PRODUCT_NAME }}_VST3.pkg
+          xcrun stapler staple ${{ env.PRODUCT_NAME }}_AU.pkg
+          xcrun stapler staple ${{ env.PRODUCT_NAME }}_App.pkg
 
       - name: productbuild
         run: |
           cp LICENSE Resources/license.txt
-          ls -l
           productbuild \
           --distribution distribution.xml \
           --resources Resources \
@@ -210,7 +305,7 @@ jobs:
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
-            --wait --output-format json > notarization_result.json
+            --wait --output-format json > installer_notarization_result.json
 
       - name: Staple Notarization Ticket
         run: |
