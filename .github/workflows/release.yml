@@ -256,7 +256,7 @@ jobs:
 
       - name: Staple Notarization Ticket
         run: |
-          xcrun stapler staple dist/${{ env.PRODUCT_NAME }}_App.dmg
+          xcrun stapler staple pkg/${{ env.PRODUCT_NAME }}_App.dmg
 
       - name: Create postinstall script
         run: |
