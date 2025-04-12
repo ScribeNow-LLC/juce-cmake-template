@@ -226,9 +226,9 @@ jobs:
           --icon "JUCE_CMake_Plugin.app" 80 200 \
           --icon "Applications" 300 200 \
           --hide-extension "JUCE_CMake_Plugin.app" \
-          --app-drop-link "Applications" \
-          dmg_staging/
-          pkg/${{ env.PRODUCT_NAME }}_App.dmg \
+          --app-drop-link 300 200 \
+          dmg_staging/ \
+          pkg/JUCE_CMake_Plugin_App.dmg
 
       - name: Sign DMG
         run: |
