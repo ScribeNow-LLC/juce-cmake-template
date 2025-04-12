@@ -140,52 +140,182 @@ jobs:
 
       - name: Prepare for pkgbuild
         run: |
-          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3"
-          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components"
-          mkdir -p "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications"
+          mkdir -p "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3"
+          mkdir -p "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components"
           
-          cp -Rp "build/juce_cmake_plugin_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" \
-                "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/"
-          touch "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/.keep"
           cp -Rp "build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" \
-                "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/"
+                "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/"
           cp -Rp "build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component" \
-                "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/"
+                "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/"
           
-          chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/${{ env.PRODUCT_NAME }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}"
-          chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Payload/Applications/${{ env.PRODUCT_NAME }}.app"
-          chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/${{ env.PRODUCT_NAME }}.vst3/Contents/MacOS/${{ env.PRODUCT_NAME }}"
-          chmod +x "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/${{ env.PRODUCT_NAME }}.component/Contents/MacOS/${{ env.PRODUCT_NAME }}"
+          chmod +x "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/${{ env.PRODUCT_NAME }}.vst3/Contents/MacOS/${{ env.PRODUCT_NAME }}"
+          chmod +x "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/${{ env.PRODUCT_NAME }}.component/Contents/MacOS/${{ env.PRODUCT_NAME }}"
 
       - name: pkgbuild
         run: |
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3" \
+          --root "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3" \
           --install-location /Library/Audio/Plug-Ins/VST3 \
           --identifier ${{ env.BUNDLE_ID }}.vst3 \
           --version ${{ env.VERSION_NUMBER }} \
-          ${{ env.PRODUCT_NAME }}_VST3.pkg
+          ${{ env.PRODUCT_NAME }}_VST3_unsigned.pkg
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components" \
+          --root "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components" \
           --install-location /Library/Audio/Plug-Ins/Components \
           --identifier ${{ env.BUNDLE_ID }}.component \
           --version ${{ env.VERSION_NUMBER }} \
-          ${{ env.PRODUCT_NAME }}_AU.pkg
+          ${{ env.PRODUCT_NAME }}_AU_unsigned.pkg
+
+      - name: Sign individual packages
+        run: |
+          set -e
+          CERT_NAME=$(security find-identity -v build.keychain | grep "Developer ID Installer" | sed -E 's/.*"(.+)"$/\1/' | head -n 1)
+          echo "Using cert: $CERT_NAME"
+          security unlock-keychain -p "build" build.keychain > /dev/null 2>&1
+          security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain > /dev/null 2>&1
+
+          echo "Signing VST3 Installer..."
+          productsign --sign "$CERT_NAME" \
+          ${{ env.PRODUCT_NAME }}_VST3_unsigned.pkg \
+          dist/${{ env.PRODUCT_NAME }}_VST3.pkg
+
+          echo "Verifying VST3 signature..."
+          pkgutil --check-signature dist/${{ env.PRODUCT_NAME }}_VST3.pkg
+          
+          echo "Signing AU Installer..."
+          productsign --sign "$CERT_NAME" \
+          ${{ env.PRODUCT_NAME }}_AU_unsigned.pkg \
+          dist/${{ env.PRODUCT_NAME }}_AU.pkg
+
+          echo "Verifying AU signature..."
+          pkgutil --check-signature dist/${{ env.PRODUCT_NAME }}_AU.pkg
+
+      - name: Notarize Individual Installers
+        run: |
+          xcrun notarytool submit dist/${{ env.PRODUCT_NAME }}_VST3.pkg \
+            --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --wait --output-format json > vst3_installer_notarization_result.json
+          xcrun notarytool submit dist/${{ env.PRODUCT_NAME }}_AU.pkg \
+            --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --wait --output-format json > au_installer_notarization_result.json
+
+      - name: Staple Notarization Tickets
+        run: |
+          xcrun stapler staple dist/${{ env.PRODUCT_NAME }}_VST3.pkg
+          xcrun stapler staple dist/${{ env.PRODUCT_NAME }}_AU.pkg
+
+      - name: Prepare for create-dmg
+        run: |
+          mkdir -p dmg_staging
+          cp -Rp "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" dmg_staging/
+          chmod +x "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app"
+          ln -s /Applications dmg_staging/"Applications"
+
+      - name: create-dmg
+        run: |
+          create-dmg \
+          --volname "JUCE CMake Plugin Installer" \
+          --window-pos 200 120 \
+          --window-size 600 400 \
+          --icon-size 96 \
+          --icon "JUCE_CMake_Plugin.app" 80 200 \
+          --icon "Applications" 300 200 \
+          --hide-extension "JUCE_CMake_Plugin.app" \
+          --app-drop-link "Applications" \
+          pkg/${{ env.PRODUCT_NAME }}_App.dmg \
+          dmg_staging/
+
+      - name: Sign DMG
+        run: |
+          set -e
+          CERT_NAME=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application" | sed -E 's/.*"(.+)"$/\1/' | head -n 1)
+          echo "Using cert: $CERT_NAME"
+          security unlock-keychain -p "build" build.keychain > /dev/null 2>&1
+          security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain > /dev/null 2>&1
+
+          echo "Signing DMG..."
+          codesign --force --deep --verbose --sign "$CERT_NAME" \
+            --options runtime --timestamp \
+            "pkg/${{ env.PRODUCT_NAME }}_App.dmg"
+
+          echo "Verifying signature..."
+          codesign --verify --deep --strict --verbose=4 "pkg/${{ env.PRODUCT_NAME }}_App.dmg"
+
+      - name: Notarize DMG
+        run: |
+          xcrun notarytool submit pkg/${{ env.PRODUCT_NAME }}_App.dmg \
+            --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --wait --output-format json > app_installer_notarization_result.json
+
+      - name: Staple Notarization Ticket
+        run: |
+          xcrun stapler staple dist/${{ env.PRODUCT_NAME }}_App.dmg
+
+      - name: Create postinstall script
+        run: |
+          mkdir -p dist/Scripts
+          cat << 'EOF' > dist/Scripts/postinstall
+          #!/bin/bash
+          
+          DMG_PATH="/Library/Application Support/${{ env.PRODUCT_NAME }}/${{ env.PRODUCT_NAME }}_App.dmg"
+          
+          /usr/bin/open "$DMG_PATH"
+          
+          exit 0
+          EOF
+          
+          chmod +x dist/Scripts/postinstall
+
+      - name: Prepare for productbuild
+        run: |
+          echo "Creating payload..."
+          mkdir -p dist/DmgPayload/Library/Application\ Support/JUCE_CMake_Plugin
+          cp pkg/${{ env.PRODUCT_NAME }}_App.dmg dist/DmgPayload/Library/Application\ Support/JUCE_CMake_Plugin/
+          
+          echo "Packaging..."
           pkgbuild \
-          --root "dist/${{ env.PRODUCT_NAME }}_Installer/Payload" \
+          --root dist/DmgPayload \
           --install-location / \
-          --identifier ${{ env.BUNDLE_ID }}.app \
+          --identifier ${{ env.BUNDLE_ID }}.dmgpayload \
           --version ${{ env.VERSION_NUMBER }} \
-          ${{ env.PRODUCT_NAME }}_App.pkg  
+          pkg/${{ env.PRODUCT_NAME }}_DMG_unsigned.pkg
+          
+          echo "Signing..."
+          set -e
+          CERT_NAME=$(security find-identity -v build.keychain | grep "Developer ID Installer" | sed -E 's/.*"(.+)"$/\1/' | head -n 1)
+          echo "Using cert: $CERT_NAME"
+          security unlock-keychain -p "build" build.keychain > /dev/null 2>&1
+          security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain > /dev/null 2>&1
+          productsign --sign "$CERT_NAME" \
+          pkg/${{ env.PRODUCT_NAME }}_DMG_unsigned.pkg \
+          dist/${{ env.PRODUCT_NAME }}_DMG.pkg
+          pkgutil --check-signature dist/${{ env.PRODUCT_NAME }}_DMG.pkg
+          
+          echo "Notarizing..."
+          xcrun notarytool submit dist/${{ env.PRODUCT_NAME }}_DMG.pkg \
+            --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --wait --output-format json > dmg_installer_notarization_result.json
+          
+          echo "Stapling..."
+          xcrun stapler staple dist/${{ env.PRODUCT_NAME }}_DMG.pkg
 
       - name: productbuild
         run: |
           cp LICENSE Resources/license.txt
           ls -l
           productbuild \
-          --distribution distribution.xml \
-          --resources Resources \
-          --package-path . \
+          --distribution dist/distribution.xml \
+          --resources dist/Resources \
+          --scripts dist/Scripts \
+          --package-path dist \
           ${{ env.PRODUCT_NAME }}_macOS_Unsigned.pkg
 
       - name: Sign installer
