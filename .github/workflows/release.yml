@@ -227,7 +227,7 @@ jobs:
           --icon "Applications" 300 200 \
           --hide-extension "${{ env.PRODUCT_NAME }}.app" \
           --app-drop-link 300 200 \
-          pkg/${{ env.PRODUCT_NAME }}_App.dmg \
+          "pkg/${{ env.PRODUCT_NAME }}_App.dmg" \
           dmg_staging/
 
       - name: Sign DMG
