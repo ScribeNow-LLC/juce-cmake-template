@@ -385,7 +385,7 @@ jobs:
 
           $BUNDLE_ID = ($cmakeFile | Select-String 'set\(JUCE_BUNDLE_ID\s*"(.*?)"\)' | ForEach-Object { $_.Matches[0].Groups[1].Value }).Trim()
           $PRODUCT_NAME = ($cmakeFile | Select-String 'set\(JUCE_PRODUCT_NAME\s*"(.*?)"\)' | ForEach-Object { $_.Matches[0].Groups[1].Value }).Trim()
-          $PRODUCT_NAME_U = $PRODUCT_NAME_U -replace ' ', '_'
+          $PRODUCT_NAME_U = $PRODUCT_NAME -replace ' ', '_'
           $TARGET_NAME = ($cmakeFile | Select-String 'set\(TARGET_NAME\s*"(.*?)"\)' | ForEach-Object { $_.Matches[0].Groups[1].Value }).Trim()
 
           "VERSION_NUMBER=$VERSION_NUMBER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
