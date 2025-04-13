@@ -385,11 +385,13 @@ jobs:
 
           $BUNDLE_ID = ($cmakeFile | Select-String 'set\(JUCE_BUNDLE_ID\s*"(.*?)"\)' | ForEach-Object { $_.Matches[0].Groups[1].Value }).Trim()
           $PRODUCT_NAME = ($cmakeFile | Select-String 'set\(JUCE_PRODUCT_NAME\s*"(.*?)"\)' | ForEach-Object { $_.Matches[0].Groups[1].Value }).Trim()
+          $PRODUCT_NAME_U = $PRODUCT_NAME_U -replace ' ', '_'
           $TARGET_NAME = ($cmakeFile | Select-String 'set\(TARGET_NAME\s*"(.*?)"\)' | ForEach-Object { $_.Matches[0].Groups[1].Value }).Trim()
 
           "VERSION_NUMBER=$VERSION_NUMBER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "BUNDLE_ID=$BUNDLE_ID" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "PRODUCT_NAME=$PRODUCT_NAME" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "PRODUCT_NAME_U=$PRODUCT_NAME_U" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "TARGET_NAME=$TARGET_NAME" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Configure with MSVC
@@ -404,14 +406,14 @@ jobs:
           mkdir package
           copy "build\${{ env.TARGET_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe" package\
           copy "build\${{ env.TARGET_NAME }}_artefacts\Release\VST3\${{ env.PRODUCT_NAME }}.vst3" package\
-          $zipName = "${{ env.PRODUCT_NAME }}_windows.zip"
+          $zipName = "${{ env.PRODUCT_NAME_U }}_windows.zip"
           Compress-Archive -Path package\* -DestinationPath "$zipName"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME }}-Windows
-          path: ${{ env.PRODUCT_NAME }}_windows.zip
+          name: ${{ env.PRODUCT_NAME_U }}-Windows
+          path: ${{ env.PRODUCT_NAME_U }}_windows.zip
 
   build-linux:
     needs: check-tag
@@ -438,9 +440,14 @@ jobs:
         run: |
           TAG_NAME=${{ github.ref_name }}
           echo "VERSION_NUMBER=${TAG_NAME#v}" >> $GITHUB_ENV
-          echo "BUNDLE_ID=$(sed -n 's/^set(JUCE_BUNDLE_ID[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
-          echo "PRODUCT_NAME=$(sed -n 's/^set(JUCE_PRODUCT_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
-          echo "TARGET_NAME=$(sed -n 's/^set(TARGET_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
+          BUNDLE_ID=$(sed -n 's/^set(JUCE_BUNDLE_ID[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)
+          PRODUCT_NAME=$(sed -n 's/^set(JUCE_PRODUCT_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)
+          TARGET_NAME=$(sed -n 's/^set(TARGET_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)
+
+          echo "BUNDLE_ID=$BUNDLE_ID" >> $GITHUB_ENV
+          echo "PRODUCT_NAME=$PRODUCT_NAME" >> $GITHUB_ENV
+          echo "PRODUCT_NAME_U=${PRODUCT_NAME// /_}" >> $GITHUB_ENV
+          echo "TARGET_NAME=$TARGET_NAME" >> $GITHUB_ENV
 
       - name: Configure
         run: |
@@ -456,13 +463,13 @@ jobs:
           mkdir -p package
           cp -r "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}" package/
           cp -r "build/${{ env.TARGET_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" package/
-          cd package && zip -r "../${{ env.PRODUCT_NAME }}_linux.zip" *
+          cd package && zip -r "../${{ env.PRODUCT_NAME_U }}_linux.zip" *
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME }}-Linux
-          path: ${{ env.PRODUCT_NAME }}_linux.zip
+          name: ${{ env.PRODUCT_NAME_U }}-Linux
+          path: ${{ env.PRODUCT_NAME_U }}_linux.zip
 
   release:
     needs: [ build-macos, build-windows, build-linux ]
@@ -478,26 +485,31 @@ jobs:
         run: |
           TAG_NAME=${{ github.ref_name }}
           echo "VERSION_NUMBER=${TAG_NAME#v}" >> $GITHUB_ENV
-          echo "BUNDLE_ID=$(sed -n 's/^set(JUCE_BUNDLE_ID[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
-          echo "PRODUCT_NAME=$(sed -n 's/^set(JUCE_PRODUCT_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
-          echo "TARGET_NAME=$(sed -n 's/^set(TARGET_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
+          BUNDLE_ID=$(sed -n 's/^set(JUCE_BUNDLE_ID[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)
+          PRODUCT_NAME=$(sed -n 's/^set(JUCE_PRODUCT_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)
+          TARGET_NAME=$(sed -n 's/^set(TARGET_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)
+
+          echo "BUNDLE_ID=$BUNDLE_ID" >> $GITHUB_ENV
+          echo "PRODUCT_NAME=$PRODUCT_NAME" >> $GITHUB_ENV
+          echo "PRODUCT_NAME_U=${PRODUCT_NAME// /_}" >> $GITHUB_ENV
+          echo "TARGET_NAME=$TARGET_NAME" >> $GITHUB_ENV
 
       - name: Download macOS artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME }}-macOS
+          name: ${{ env.PRODUCT_NAME_U }}-macOS
           path: artifacts/
 
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME }}-Windows
+          name: ${{ env.PRODUCT_NAME_U }}-Windows
           path: artifacts/
 
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME }}-Linux
+          name: ${{ env.PRODUCT_NAME_U }}-Linux
           path: artifacts/
 
       - name: Display downloaded files
@@ -509,9 +521,9 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           files: |
-            artifacts/${{ env.PRODUCT_NAME }}_macOS.pkg
-            artifacts/${{ env.PRODUCT_NAME }}_windows.zip
-            artifacts/${{ env.PRODUCT_NAME }}_linux.zip
+            artifacts/${{ env.PRODUCT_NAME_U }}_macOS.pkg
+            artifacts/${{ env.PRODUCT_NAME_U }}_windows.zip
+            artifacts/${{ env.PRODUCT_NAME_U }}_linux.zip
           draft: false
           prerelease: false
           generate_release_notes: true
