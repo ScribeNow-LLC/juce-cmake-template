@@ -350,8 +350,8 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: "${{ env.PRODUCT_NAME }}-macOS"
-          path: "${{ env.PRODUCT_NAME }}_macOS.pkg"
+          name: ${{ env.PRODUCT_NAME }}-macOS
+          path: ${{ env.PRODUCT_NAME }}_macOS.pkg
 
       - name: Cleanup Keychain
         if: always()
@@ -408,8 +408,8 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: "${{ env.PRODUCT_NAME }}-Windows"
-          path: "${{ env.PRODUCT_NAME }}_windows.zip"
+          name: ${{ env.PRODUCT_NAME }}-Windows
+          path: ${{ env.PRODUCT_NAME }}_windows.zip
 
   build-linux:
     needs: check-tag
@@ -459,8 +459,8 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: "${{ env.PRODUCT_NAME }}-Linux"
-          path: "${{ env.PRODUCT_NAME }}_linux.zip"
+          name: ${{ env.PRODUCT_NAME }}-Linux
+          path: ${{ env.PRODUCT_NAME }}_linux.zip
 
   release:
     needs: [ build-macos, build-windows, build-linux ]
@@ -483,19 +483,19 @@ jobs:
       - name: Download macOS artifact
         uses: actions/download-artifact@v4
         with:
-          name: "${{ env.PRODUCT_NAME }}-macOS"
+          name: ${{ env.PRODUCT_NAME }}-macOS
           path: artifacts/
 
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
-          name: "${{ env.PRODUCT_NAME }}-Windows"
+          name: ${{ env.PRODUCT_NAME }}-Windows
           path: artifacts/
 
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          name: "${{ env.PRODUCT_NAME }}-Linux"
+          name: ${{ env.PRODUCT_NAME }}-Linux
           path: artifacts/
 
       - name: Display downloaded files
@@ -507,9 +507,9 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           files: |
-            "artifacts/${{ env.PRODUCT_NAME }}_macOS.pkg"
-            "artifacts/${{ env.PRODUCT_NAME }}_windows.zip"
-            "artifacts/${{ env.PRODUCT_NAME }}_linux.zip"
+            artifacts/${{ env.PRODUCT_NAME }}_macOS.pkg
+            artifacts/${{ env.PRODUCT_NAME }}_windows.zip
+            artifacts/${{ env.PRODUCT_NAME }}_linux.zip
           draft: false
           prerelease: false
           generate_release_notes: true
