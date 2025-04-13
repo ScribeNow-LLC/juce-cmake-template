@@ -277,7 +277,7 @@ jobs:
         run: |
           echo "Creating payload..."
           mkdir -p "dist/DmgPayload/Library/Application Support/${{ env.PRODUCT_NAME }}"
-          cp "pkg/${{ env.PRODUCT_NAME }}_App.dmg" "dist/DmgPayload/Library/Application\ Support/${{ env.PRODUCT_NAME }}/"
+          cp "pkg/${{ env.PRODUCT_NAME }}_App.dmg" "dist/DmgPayload/Library/Application Support/${{ env.PRODUCT_NAME }}/"
           
           echo "Packaging..."
           pkgbuild \
