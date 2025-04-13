@@ -276,12 +276,13 @@ jobs:
       - name: Prepare for productbuild
         run: |
           echo "Creating payload..."
-          mkdir -p dist/DmgPayload/Library/Application\ Support/JUCE_CMake_Plugin
-          cp pkg/${{ env.PRODUCT_NAME }}_App.dmg dist/DmgPayload/Library/Application\ Support/JUCE_CMake_Plugin/
+          mkdir -p dist/DmgPayload/Library/Application\ Support/${{ env.PRODUCT_NAME }}
+          cp pkg/${{ env.PRODUCT_NAME }}_App.dmg dist/DmgPayload/Library/Application\ Support/${{ env.PRODUCT_NAME }}/
           
           echo "Packaging..."
           pkgbuild \
           --root dist/DmgPayload \
+          --scripts dist/Scripts \
           --install-location / \
           --identifier ${{ env.BUNDLE_ID }}.dmgpayload \
           --version ${{ env.VERSION_NUMBER }} \
@@ -315,7 +316,6 @@ jobs:
           productbuild \
           --distribution dist/distribution.xml \
           --resources dist/Resources \
-          --scripts dist/Scripts \
           --package-path dist \
           ${{ env.PRODUCT_NAME }}_macOS_Unsigned.pkg
 
