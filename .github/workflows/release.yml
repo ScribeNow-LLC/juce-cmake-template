@@ -144,9 +144,9 @@ jobs:
           mkdir -p "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3"
           mkdir -p "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components"
           
-          cp -Rp "build/juce_cmake_plugin_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" \
+          cp -Rp "build/${{ env.TARGET_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" \
                 "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/"
-          cp -Rp "build/juce_cmake_plugin_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component" \
+          cp -Rp "build/${{ env.TARGET_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component" \
                 "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/"
           
           chmod +x "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/${{ env.PRODUCT_NAME }}.vst3/Contents/MacOS/${{ env.PRODUCT_NAME }}"
@@ -159,13 +159,13 @@ jobs:
           --install-location /Library/Audio/Plug-Ins/VST3 \
           --identifier ${{ env.BUNDLE_ID }}.vst3 \
           --version ${{ env.VERSION_NUMBER }} \
-          ${{ env.PRODUCT_NAME }}_VST3_unsigned.pkg
+          "${{ env.PRODUCT_NAME }}_VST3_unsigned.pkg"
           pkgbuild \
           --root "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components" \
           --install-location /Library/Audio/Plug-Ins/Components \
           --identifier ${{ env.BUNDLE_ID }}.component \
           --version ${{ env.VERSION_NUMBER }} \
-          ${{ env.PRODUCT_NAME }}_AU_unsigned.pkg
+          "${{ env.PRODUCT_NAME }}_AU_unsigned.pkg"
 
       - name: Sign individual packages
         run: |
@@ -177,28 +177,28 @@ jobs:
 
           echo "Signing VST3 Installer..."
           productsign --sign "$CERT_NAME" \
-          ${{ env.PRODUCT_NAME }}_VST3_unsigned.pkg \
-          dist/${{ env.PRODUCT_NAME }}_VST3.pkg
+          "${{ env.PRODUCT_NAME }}_VST3_unsigned.pkg" \
+          "dist/${{ env.PRODUCT_NAME }}_VST3.pkg"
 
           echo "Verifying VST3 signature..."
-          pkgutil --check-signature dist/${{ env.PRODUCT_NAME }}_VST3.pkg
+          pkgutil --check-signature "dist/${{ env.PRODUCT_NAME }}_VST3.pkg"
           
           echo "Signing AU Installer..."
           productsign --sign "$CERT_NAME" \
-          ${{ env.PRODUCT_NAME }}_AU_unsigned.pkg \
-          dist/${{ env.PRODUCT_NAME }}_AU.pkg
+          "${{ env.PRODUCT_NAME }}_AU_unsigned.pkg" \
+          "dist/${{ env.PRODUCT_NAME }}_AU.pkg"
 
           echo "Verifying AU signature..."
-          pkgutil --check-signature dist/${{ env.PRODUCT_NAME }}_AU.pkg
+          pkgutil --check-signature "dist/${{ env.PRODUCT_NAME }}_AU.pkg"
 
       - name: Notarize Individual Installers
         run: |
-          xcrun notarytool submit dist/${{ env.PRODUCT_NAME }}_VST3.pkg \
+          xcrun notarytool submit "dist/${{ env.PRODUCT_NAME }}_VST3.pkg" \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
             --wait --output-format json > vst3_installer_notarization_result.json
-          xcrun notarytool submit dist/${{ env.PRODUCT_NAME }}_AU.pkg \
+          xcrun notarytool submit "dist/${{ env.PRODUCT_NAME }}_AU.pkg" \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
@@ -206,8 +206,8 @@ jobs:
 
       - name: Staple Notarization Tickets
         run: |
-          xcrun stapler staple dist/${{ env.PRODUCT_NAME }}_VST3.pkg
-          xcrun stapler staple dist/${{ env.PRODUCT_NAME }}_AU.pkg
+          xcrun stapler staple "dist/${{ env.PRODUCT_NAME }}_VST3.pkg"
+          xcrun stapler staple "dist/${{ env.PRODUCT_NAME }}_AU.pkg"
 
       - name: Prepare for create-dmg
         run: |
@@ -219,15 +219,15 @@ jobs:
       - name: create-dmg
         run: |
           create-dmg \
-          --volname "JUCE CMake Plugin Installer" \
+          --volname "${{ env.PRODUCT_NAME }} Installer" \
           --window-pos 200 120 \
           --window-size 600 400 \
           --icon-size 96 \
-          --icon "JUCE_CMake_Plugin.app" 80 200 \
+          --icon "${{ env.PRODUCT_NAME }}.app" 80 200 \
           --icon "Applications" 300 200 \
-          --hide-extension "JUCE_CMake_Plugin.app" \
+          --hide-extension "${{ env.PRODUCT_NAME }}.app" \
           --app-drop-link 300 200 \
-          pkg/JUCE_CMake_Plugin_App.dmg \
+          pkg/${{ env.PRODUCT_NAME }}.dmg \
           dmg_staging/
 
       - name: Sign DMG
@@ -248,7 +248,7 @@ jobs:
 
       - name: Notarize DMG
         run: |
-          xcrun notarytool submit pkg/${{ env.PRODUCT_NAME }}_App.dmg \
+          xcrun notarytool submit "pkg/${{ env.PRODUCT_NAME }}_App.dmg" \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
@@ -256,7 +256,7 @@ jobs:
 
       - name: Staple Notarization Ticket
         run: |
-          xcrun stapler staple pkg/${{ env.PRODUCT_NAME }}_App.dmg
+          xcrun stapler staple "pkg/${{ env.PRODUCT_NAME }}_App.dmg"
 
       - name: Create postinstall script
         run: |
@@ -276,8 +276,8 @@ jobs:
       - name: Prepare for productbuild
         run: |
           echo "Creating payload..."
-          mkdir -p dist/DmgPayload/Library/Application\ Support/${{ env.PRODUCT_NAME }}
-          cp pkg/${{ env.PRODUCT_NAME }}_App.dmg dist/DmgPayload/Library/Application\ Support/${{ env.PRODUCT_NAME }}/
+          mkdir -p "dist/DmgPayload/Library/Application Support/${{ env.PRODUCT_NAME }}"
+          cp "pkg/${{ env.PRODUCT_NAME }}_App.dmg" "dist/DmgPayload/Library/Application\ Support/${{ env.PRODUCT_NAME }}/"
           
           echo "Packaging..."
           pkgbuild \
@@ -286,7 +286,7 @@ jobs:
           --install-location / \
           --identifier ${{ env.BUNDLE_ID }}.dmgpayload \
           --version ${{ env.VERSION_NUMBER }} \
-          pkg/${{ env.PRODUCT_NAME }}_DMG_unsigned.pkg
+          "pkg/${{ env.PRODUCT_NAME }}_DMG_unsigned.pkg"
           
           echo "Signing..."
           set -e
@@ -295,19 +295,19 @@ jobs:
           security unlock-keychain -p "build" build.keychain > /dev/null 2>&1
           security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain > /dev/null 2>&1
           productsign --sign "$CERT_NAME" \
-          pkg/${{ env.PRODUCT_NAME }}_DMG_unsigned.pkg \
-          dist/${{ env.PRODUCT_NAME }}_DMG.pkg
-          pkgutil --check-signature dist/${{ env.PRODUCT_NAME }}_DMG.pkg
+          "pkg/${{ env.PRODUCT_NAME }}_DMG_unsigned.pkg" \
+          "dist/${{ env.PRODUCT_NAME }}_DMG.pkg"
+          pkgutil --check-signature "dist/${{ env.PRODUCT_NAME }}_DMG.pkg"
           
           echo "Notarizing..."
-          xcrun notarytool submit dist/${{ env.PRODUCT_NAME }}_DMG.pkg \
+          xcrun notarytool submit "dist/${{ env.PRODUCT_NAME }}_DMG.pkg" \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
             --wait --output-format json > dmg_installer_notarization_result.json
           
           echo "Stapling..."
-          xcrun stapler staple dist/${{ env.PRODUCT_NAME }}_DMG.pkg
+          xcrun stapler staple "dist/${{ env.PRODUCT_NAME }}_DMG.pkg"
 
       - name: productbuild
         run: |
@@ -317,7 +317,7 @@ jobs:
           --distribution dist/distribution.xml \
           --resources dist/Resources \
           --package-path dist \
-          ${{ env.PRODUCT_NAME }}_macOS_Unsigned.pkg
+          "${{ env.PRODUCT_NAME }}_macOS_Unsigned.pkg"
 
       - name: Sign installer
         run: |
@@ -329,15 +329,15 @@ jobs:
 
           echo "Signing Installer..."
           productsign --sign "$CERT_NAME" \
-          ${{ env.PRODUCT_NAME }}_macOS_Unsigned.pkg \
-          ${{ env.PRODUCT_NAME }}_macOS.pkg
+          "${{ env.PRODUCT_NAME }}_macOS_Unsigned.pkg" \
+          "${{ env.PRODUCT_NAME }}_macOS.pkg"
 
           echo "Verifying signature..."
-          pkgutil --check-signature ${{ env.PRODUCT_NAME }}_macOS.pkg
+          pkgutil --check-signature "${{ env.PRODUCT_NAME }}_macOS.pkg"
 
       - name: Notarize Installer
         run: |
-          xcrun notarytool submit ${{ env.PRODUCT_NAME }}_macOS.pkg \
+          xcrun notarytool submit "${{ env.PRODUCT_NAME }}_macOS.pkg" \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
@@ -345,134 +345,134 @@ jobs:
 
       - name: Staple Notarization Ticket
         run: |
-          xcrun stapler staple ${{ env.PRODUCT_NAME }}_macOS.pkg
+          xcrun stapler staple "${{ env.PRODUCT_NAME }}_macOS.pkg"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME }}-macOS
-          path: ${{ env.PRODUCT_NAME }}_macOS.pkg
+          name: "${{ env.PRODUCT_NAME }}-macOS"
+          path: "${{ env.PRODUCT_NAME }}_macOS.pkg"
 
       - name: Cleanup Keychain
         if: always()
         run: |
           security delete-keychain build.keychain
 
-#  build-windows:
-#    needs: check-tag
-#    if: needs.check-tag.outputs.is_latest == 'true'
-#    runs-on: windows-latest
-#
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#
-#      - name: Install Ninja
-#        run: choco install ninja
-#
-#      - name: Set up MSVC Developer Command Prompt
-#        uses: ilammy/msvc-dev-cmd@v1
-#
-#      - name: Configure with MSVC
-#        run: cmake -DCMAKE_BUILD_TYPE=Release -G "Ninja" -B build -S .
-#
-#      - name: Build
-#        run: cmake --build build --target ${{ env.TARGET_NAME }}_All -j
-#
-#      - name: Package
-#        shell: pwsh
-#        run: |
-#          mkdir package
-#          copy "build\${{ env.TARGET_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe" package\
-#          copy "build\${{ env.TARGET_NAME }}_artefacts\Release\VST3\${{ env.PRODUCT_NAME }}.vst3" package\
-#          $zipName = "${{ env.PRODUCT_NAME }}_windows.zip"
-#          Compress-Archive -Path package\* -DestinationPath "$zipName"
-#
-#      - name: Upload Artifacts
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: ${{ env.PRODUCT_NAME }}-Windows
-#          path: ${{ env.PRODUCT_NAME }}_windows.zip
-#
-#  build-linux:
-#    needs: check-tag
-#    if: needs.check-tag.outputs.is_latest == 'true'
-#    runs-on: ubuntu-22.04
-#
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v4
-#
-#      - name: Install Dependencies
-#        run: |
-#          sudo apt update
-#          sudo apt install -y \
-#            cmake ninja-build build-essential \
-#            libasound2-dev libjack-jackd2-dev \
-#            libx11-dev libfreetype6-dev libfontconfig1-dev \
-#            libgl1-mesa-dev libcurl4-openssl-dev \
-#            libxrandr-dev libxinerama-dev libxcursor-dev \
-#            libxcomposite-dev libxext-dev \
-#            libgtk2.0-dev
-#
-#      - name: Configure
-#        run: |
-#          cmake -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-#                -DCMAKE_EXE_LINKER_FLAGS="-lcurl" \
-#                -G Ninja -B build -S .
-#
-#      - name: Build
-#        run: cmake --build build --target ${{ env.TARGET_NAME }}_All -j
-#
-#      - name: Package
-#        run: |
-#          mkdir -p package
-#          cp -r "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}" package/
-#          cp -r "build/${{ env.TARGET_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" package/
-#          cd package && zip -r ../${{ env.PRODUCT_NAME }}_linux.zip *
-#
-#      - name: Upload Artifacts
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: ${{ env.PRODUCT_NAME }}-Linux
-#          path: ${{ env.PRODUCT_NAME }}_linux.zip
-#
-#  release:
-#    needs: [ build-macos, build-windows, build-linux ]
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Download macOS artifact
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: ${{ env.PRODUCT_NAME }}-macOS
-#          path: artifacts/
-#
-#      - name: Download Windows artifact
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: ${{ env.PRODUCT_NAME }}-Windows
-#          path: artifacts/
-#
-#      - name: Download Linux artifact
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: ${{ env.PRODUCT_NAME }}-Linux
-#          path: artifacts/
-#
-#      - name: Display downloaded files
-#        run: ls -R artifacts
-#
-#      - name: Create GitHub Release and Upload Assets
-#        uses: softprops/action-gh-release@v1
-#        with:
-#          tag_name: ${{ github.ref_name }}
-#          name: ${{ github.ref_name }}
-#          files: |
-#            artifacts/${{ env.PRODUCT_NAME }}_macOS.pkg
-#            artifacts/${{ env.PRODUCT_NAME }}_windows.zip
-#            artifacts/${{ env.PRODUCT_NAME }}_linux.zip
-#          draft: false
-#          prerelease: false
-#          generate_release_notes: true
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  build-windows:
+    needs: check-tag
+    if: needs.check-tag.outputs.is_latest == 'true'
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Ninja
+        run: choco install ninja
+
+      - name: Set up MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure with MSVC
+        run: cmake -DCMAKE_BUILD_TYPE=Release -G "Ninja" -B build -S .
+
+      - name: Build
+        run: cmake --build build --target ${{ env.TARGET_NAME }}_All -j
+
+      - name: Package
+        shell: pwsh
+        run: |
+          mkdir package
+          copy "build\${{ env.TARGET_NAME }}_artefacts\Release\Standalone\${{ env.PRODUCT_NAME }}.exe" package\
+          copy "build\${{ env.TARGET_NAME }}_artefacts\Release\VST3\${{ env.PRODUCT_NAME }}.vst3" package\
+          $zipName = "${{ env.PRODUCT_NAME }}_windows.zip"
+          Compress-Archive -Path package\* -DestinationPath "$zipName"
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ env.PRODUCT_NAME }}-Windows"
+          path: "${{ env.PRODUCT_NAME }}_windows.zip"
+
+  build-linux:
+    needs: check-tag
+    if: needs.check-tag.outputs.is_latest == 'true'
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            cmake ninja-build build-essential \
+            libasound2-dev libjack-jackd2-dev \
+            libx11-dev libfreetype6-dev libfontconfig1-dev \
+            libgl1-mesa-dev libcurl4-openssl-dev \
+            libxrandr-dev libxinerama-dev libxcursor-dev \
+            libxcomposite-dev libxext-dev \
+            libgtk2.0-dev
+
+      - name: Configure
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                -DCMAKE_EXE_LINKER_FLAGS="-lcurl" \
+                -G Ninja -B build -S .
+
+      - name: Build
+        run: cmake --build build --target ${{ env.TARGET_NAME }}_All -j
+
+      - name: Package
+        run: |
+          mkdir -p package
+          cp -r "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}" package/
+          cp -r "build/${{ env.TARGET_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" package/
+          cd package && zip -r "../${{ env.PRODUCT_NAME }}_linux.zip" *
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ env.PRODUCT_NAME }}-Linux"
+          path: "${{ env.PRODUCT_NAME }}_linux.zip"
+
+  release:
+    needs: [ build-macos, build-windows, build-linux ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: "${{ env.PRODUCT_NAME }}-macOS"
+          path: artifacts/
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: "${{ env.PRODUCT_NAME }}-Windows"
+          path: artifacts/
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: "${{ env.PRODUCT_NAME }}-Linux"
+          path: artifacts/
+
+      - name: Display downloaded files
+        run: ls -R artifacts
+
+      - name: Create GitHub Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: |
+            "artifacts/${{ env.PRODUCT_NAME }}_macOS.pkg"
+            "artifacts/${{ env.PRODUCT_NAME }}_windows.zip"
+            "artifacts/${{ env.PRODUCT_NAME }}_linux.zip"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
