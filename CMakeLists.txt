@@ -6,7 +6,7 @@ project(juce_cmake_plugin VERSION 1.0.0)
 
 # Set some information about the JUCE project
 set(JUCE_COMPANY_NAME "Scribe Now LLC")
-set(JUCE_PRODUCT_NAME "JUCE_CMake_Plugin")
+set(JUCE_PRODUCT_NAME "JUCE CMake Plugin")
 set(JUCE_BUNDLE_ID "com.scribenow.juce_cmake_plugin")
 set(TARGET_NAME "juce_cmake_plugin")
 
