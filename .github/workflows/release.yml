@@ -78,6 +78,7 @@ jobs:
           echo "VERSION_NUMBER=${TAG_NAME#v}" >> $GITHUB_ENV
           echo "BUNDLE_ID=$(sed -n 's/^set(JUCE_BUNDLE_ID[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
           echo "PRODUCT_NAME=$(sed -n 's/^set(JUCE_PRODUCT_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
+          PRODUCT_NAME=${{ env.PRODUCT_NAME }}
           echo "PRODUCT_NAME_U=${PRODUCT_NAME// /_}" >> $GITHUB_ENV
           echo "TARGET_NAME=$(sed -n 's/^set(TARGET_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
 
