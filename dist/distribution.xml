@@ -8,12 +8,12 @@
         <line choice="default"/>
         <line choice="vst3"/>
         <line choice="component"/>
+        <line choice="standalone"/>
     </choices-outline>
 
     <choice id="default" title="All Components" description="Install all components by default">
         <pkg-ref id="com.scribenow.juce_cmake_plugin.vst3"/>
         <pkg-ref id="com.scribenow.juce_cmake_plugin.component"/>
-        <pkg-ref id="com.scribenow.juce.dmgpayload"/>
     </choice>
 
     <choice id="vst3" title="VST3 Plugin" description="Install the VST3 plugin">
@@ -22,6 +22,10 @@
 
     <choice id="component" title="AU Plugin" description="Install the Audio Unit (AU) plugin">
         <pkg-ref id="com.scribenow.juce_cmake_plugin.component"/>
+    </choice>
+
+    <choice id="standalone" title="Standalone App" description="Install the Standalone version of the plugin">
+        <pkg-ref id="com.scribenow.juce.dmgpayload"/>
     </choice>
 
     <pkg-ref id="com.scribenow.juce.dmgpayload" auth="Root">JUCE_CMake_Plugin_DMG.pkg</pkg-ref>

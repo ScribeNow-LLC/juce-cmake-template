@@ -373,6 +373,23 @@ jobs:
       - name: Set up MSVC Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Set Environment Variables
+        shell: pwsh
+        run: |
+          $TAG_NAME = "${{ github.ref_name }}"
+          $VERSION_NUMBER = $TAG_NAME -replace '^v', ''
+
+          $cmakeFile = Get-Content "CMakeLists.txt"
+
+          $BUNDLE_ID = ($cmakeFile | Select-String 'set\(JUCE_BUNDLE_ID\s*"(.*?)"\)' | ForEach-Object { $_.Matches[0].Groups[1].Value }).Trim()
+          $PRODUCT_NAME = ($cmakeFile | Select-String 'set\(JUCE_PRODUCT_NAME\s*"(.*?)"\)' | ForEach-Object { $_.Matches[0].Groups[1].Value }).Trim()
+          $TARGET_NAME = ($cmakeFile | Select-String 'set\(TARGET_NAME\s*"(.*?)"\)' | ForEach-Object { $_.Matches[0].Groups[1].Value }).Trim()
+
+          "VERSION_NUMBER=$VERSION_NUMBER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "BUNDLE_ID=$BUNDLE_ID" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "PRODUCT_NAME=$PRODUCT_NAME" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "TARGET_NAME=$TARGET_NAME" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Configure with MSVC
         run: cmake -DCMAKE_BUILD_TYPE=Release -G "Ninja" -B build -S .
 
@@ -414,6 +431,14 @@ jobs:
             libxrandr-dev libxinerama-dev libxcursor-dev \
             libxcomposite-dev libxext-dev \
             libgtk2.0-dev
+
+      - name: Set Environment Variables
+        run: |
+          TAG_NAME=${{ github.ref_name }}
+          echo "VERSION_NUMBER=${TAG_NAME#v}" >> $GITHUB_ENV
+          echo "BUNDLE_ID=$(sed -n 's/^set(JUCE_BUNDLE_ID[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
+          echo "PRODUCT_NAME=$(sed -n 's/^set(JUCE_PRODUCT_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
+          echo "TARGET_NAME=$(sed -n 's/^set(TARGET_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
 
       - name: Configure
         run: |
