@@ -78,6 +78,7 @@ jobs:
           echo "VERSION_NUMBER=${TAG_NAME#v}" >> $GITHUB_ENV
           echo "BUNDLE_ID=$(sed -n 's/^set(JUCE_BUNDLE_ID[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
           echo "PRODUCT_NAME=$(sed -n 's/^set(JUCE_PRODUCT_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
+          echo "PRODUCT_NAME_U=${PRODUCT_NAME// /_}" >> $GITHUB_ENV
           echo "TARGET_NAME=$(sed -n 's/^set(TARGET_NAME[[:space:]]*"\(.*\)")/\1/p' CMakeLists.txt)" >> $GITHUB_ENV
 
       - name: Configure
@@ -141,31 +142,28 @@ jobs:
 
       - name: Prepare for pkgbuild
         run: |
-          mkdir -p "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3"
-          mkdir -p "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components"
+          mkdir -p "pkg/${{ env.PRODUCT_NAME_U }}_Installer/Root/Library/Audio/Plug-Ins/VST3"
+          mkdir -p "pkg/${{ env.PRODUCT_NAME_U }}_Installer/Root/Library/Audio/Plug-Ins/Components"
           
           cp -Rp "build/${{ env.TARGET_NAME }}_artefacts/Release/VST3/${{ env.PRODUCT_NAME }}.vst3" \
-                "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/"
+                "pkg/${{ env.PRODUCT_NAME_U }}_Installer/Root/Library/Audio/Plug-Ins/VST3/${{ env.PRODUCT_NAME_U }}.vst3"
           cp -Rp "build/${{ env.TARGET_NAME }}_artefacts/Release/AU/${{ env.PRODUCT_NAME }}.component" \
-                "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/"
-          
-          chmod +x "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3/${{ env.PRODUCT_NAME }}.vst3/Contents/MacOS/${{ env.PRODUCT_NAME }}"
-          chmod +x "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components/${{ env.PRODUCT_NAME }}.component/Contents/MacOS/${{ env.PRODUCT_NAME }}"
+                "pkg/${{ env.PRODUCT_NAME_U }}_Installer/Root/Library/Audio/Plug-Ins/Components/${{ env.PRODUCT_NAME_U }}.component"
 
       - name: pkgbuild
         run: |
           pkgbuild \
-          --root "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/VST3" \
+          --root "pkg/${{ env.PRODUCT_NAME_U }}_Installer/Root/Library/Audio/Plug-Ins/VST3" \
           --install-location /Library/Audio/Plug-Ins/VST3 \
           --identifier ${{ env.BUNDLE_ID }}.vst3 \
           --version ${{ env.VERSION_NUMBER }} \
-          "${{ env.PRODUCT_NAME }}_VST3_unsigned.pkg"
+          "${{ env.PRODUCT_NAME_U }}_VST3_unsigned.pkg"
           pkgbuild \
-          --root "pkg/${{ env.PRODUCT_NAME }}_Installer/Root/Library/Audio/Plug-Ins/Components" \
+          --root "pkg/${{ env.PRODUCT_NAME_U }}_Installer/Root/Library/Audio/Plug-Ins/Components" \
           --install-location /Library/Audio/Plug-Ins/Components \
           --identifier ${{ env.BUNDLE_ID }}.component \
           --version ${{ env.VERSION_NUMBER }} \
-          "${{ env.PRODUCT_NAME }}_AU_unsigned.pkg"
+          "${{ env.PRODUCT_NAME_U }}_AU_unsigned.pkg"
 
       - name: Sign individual packages
         run: |
@@ -177,28 +175,28 @@ jobs:
 
           echo "Signing VST3 Installer..."
           productsign --sign "$CERT_NAME" \
-          "${{ env.PRODUCT_NAME }}_VST3_unsigned.pkg" \
-          "dist/${{ env.PRODUCT_NAME }}_VST3.pkg"
+          "${{ env.PRODUCT_NAME_U }}_VST3_unsigned.pkg" \
+          "dist/${{ env.PRODUCT_NAME_U }}_VST3.pkg"
 
           echo "Verifying VST3 signature..."
-          pkgutil --check-signature "dist/${{ env.PRODUCT_NAME }}_VST3.pkg"
+          pkgutil --check-signature "dist/${{ env.PRODUCT_NAME_U }}_VST3.pkg"
           
           echo "Signing AU Installer..."
           productsign --sign "$CERT_NAME" \
-          "${{ env.PRODUCT_NAME }}_AU_unsigned.pkg" \
-          "dist/${{ env.PRODUCT_NAME }}_AU.pkg"
+          "${{ env.PRODUCT_NAME_U }}_AU_unsigned.pkg" \
+          "dist/${{ env.PRODUCT_NAME_U }}_AU.pkg"
 
           echo "Verifying AU signature..."
-          pkgutil --check-signature "dist/${{ env.PRODUCT_NAME }}_AU.pkg"
+          pkgutil --check-signature "dist/${{ env.PRODUCT_NAME_U }}_AU.pkg"
 
       - name: Notarize Individual Installers
         run: |
-          xcrun notarytool submit "dist/${{ env.PRODUCT_NAME }}_VST3.pkg" \
+          xcrun notarytool submit "dist/${{ env.PRODUCT_NAME_U }}_VST3.pkg" \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
             --wait --output-format json > vst3_installer_notarization_result.json
-          xcrun notarytool submit "dist/${{ env.PRODUCT_NAME }}_AU.pkg" \
+          xcrun notarytool submit "dist/${{ env.PRODUCT_NAME_U }}_AU.pkg" \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
@@ -206,13 +204,13 @@ jobs:
 
       - name: Staple Notarization Tickets
         run: |
-          xcrun stapler staple "dist/${{ env.PRODUCT_NAME }}_VST3.pkg"
-          xcrun stapler staple "dist/${{ env.PRODUCT_NAME }}_AU.pkg"
+          xcrun stapler staple "dist/${{ env.PRODUCT_NAME_U }}_VST3.pkg"
+          xcrun stapler staple "dist/${{ env.PRODUCT_NAME_U }}_AU.pkg"
 
       - name: Prepare for create-dmg
         run: |
           mkdir -p dmg_staging
-          cp -Rp "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" dmg_staging/
+          cp -Rp "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" dmg_staging/${{ env.PRODUCT_NAME }}.app
           chmod +x "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app"
           ln -s /Applications dmg_staging/"Applications"
 
@@ -227,7 +225,7 @@ jobs:
           --icon "Applications" 300 200 \
           --hide-extension "${{ env.PRODUCT_NAME }}.app" \
           --app-drop-link 300 200 \
-          "pkg/${{ env.PRODUCT_NAME }}_App.dmg" \
+          "pkg/${{ env.PRODUCT_NAME_U }}_App.dmg" \
           dmg_staging/
 
       - name: Sign DMG
@@ -241,14 +239,14 @@ jobs:
           echo "Signing DMG..."
           codesign --force --deep --verbose --sign "$CERT_NAME" \
             --options runtime --timestamp \
-            "pkg/${{ env.PRODUCT_NAME }}_App.dmg"
+            "pkg/${{ env.PRODUCT_NAME_U }}_App.dmg"
 
           echo "Verifying signature..."
-          codesign --verify --deep --strict --verbose=4 "pkg/${{ env.PRODUCT_NAME }}_App.dmg"
+          codesign --verify --deep --strict --verbose=4 "pkg/${{ env.PRODUCT_NAME_U }}_App.dmg"
 
       - name: Notarize DMG
         run: |
-          xcrun notarytool submit "pkg/${{ env.PRODUCT_NAME }}_App.dmg" \
+          xcrun notarytool submit "pkg/${{ env.PRODUCT_NAME_U }}_App.dmg" \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
@@ -256,7 +254,7 @@ jobs:
 
       - name: Staple Notarization Ticket
         run: |
-          xcrun stapler staple "pkg/${{ env.PRODUCT_NAME }}_App.dmg"
+          xcrun stapler staple "pkg/${{ env.PRODUCT_NAME_U }}_App.dmg"
 
       - name: Create postinstall script
         run: |
@@ -264,7 +262,7 @@ jobs:
           cat << 'EOF' > dist/Scripts/postinstall
           #!/bin/bash
           
-          DMG_PATH="/Library/Application Support/${{ env.PRODUCT_NAME }}/${{ env.PRODUCT_NAME }}_App.dmg"
+          DMG_PATH="/Library/Application Support/${{ env.PRODUCT_NAME }}/${{ env.PRODUCT_NAME_U }}_App.dmg"
           
           /usr/bin/open "$DMG_PATH"
           
@@ -277,7 +275,7 @@ jobs:
         run: |
           echo "Creating payload..."
           mkdir -p "dist/DmgPayload/Library/Application Support/${{ env.PRODUCT_NAME }}"
-          cp "pkg/${{ env.PRODUCT_NAME }}_App.dmg" "dist/DmgPayload/Library/Application Support/${{ env.PRODUCT_NAME }}/"
+          cp "pkg/${{ env.PRODUCT_NAME_U }}_App.dmg" "dist/DmgPayload/Library/Application Support/${{ env.PRODUCT_NAME }}/"
           
           echo "Packaging..."
           pkgbuild \
@@ -286,7 +284,7 @@ jobs:
           --install-location / \
           --identifier ${{ env.BUNDLE_ID }}.dmgpayload \
           --version ${{ env.VERSION_NUMBER }} \
-          "pkg/${{ env.PRODUCT_NAME }}_DMG_unsigned.pkg"
+          "pkg/${{ env.PRODUCT_NAME_U }}_DMG_unsigned.pkg"
           
           echo "Signing..."
           set -e
@@ -295,19 +293,19 @@ jobs:
           security unlock-keychain -p "build" build.keychain > /dev/null 2>&1
           security set-key-partition-list -S apple-tool:,apple: -s -k "build" build.keychain > /dev/null 2>&1
           productsign --sign "$CERT_NAME" \
-          "pkg/${{ env.PRODUCT_NAME }}_DMG_unsigned.pkg" \
-          "dist/${{ env.PRODUCT_NAME }}_DMG.pkg"
-          pkgutil --check-signature "dist/${{ env.PRODUCT_NAME }}_DMG.pkg"
+          "pkg/${{ env.PRODUCT_NAME_U }}_DMG_unsigned.pkg" \
+          "dist/${{ env.PRODUCT_NAME_U }}_DMG.pkg"
+          pkgutil --check-signature "dist/${{ env.PRODUCT_NAME_U }}_DMG.pkg"
           
           echo "Notarizing..."
-          xcrun notarytool submit "dist/${{ env.PRODUCT_NAME }}_DMG.pkg" \
+          xcrun notarytool submit "dist/${{ env.PRODUCT_NAME_U }}_DMG.pkg" \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
             --wait --output-format json > dmg_installer_notarization_result.json
           
           echo "Stapling..."
-          xcrun stapler staple "dist/${{ env.PRODUCT_NAME }}_DMG.pkg"
+          xcrun stapler staple "dist/${{ env.PRODUCT_NAME_U }}_DMG.pkg"
 
       - name: productbuild
         run: |
@@ -317,7 +315,7 @@ jobs:
           --distribution dist/distribution.xml \
           --resources dist/Resources \
           --package-path dist \
-          "${{ env.PRODUCT_NAME }}_macOS_Unsigned.pkg"
+          "${{ env.PRODUCT_NAME_U }}_macOS_Unsigned.pkg"
 
       - name: Sign installer
         run: |
@@ -329,15 +327,15 @@ jobs:
 
           echo "Signing Installer..."
           productsign --sign "$CERT_NAME" \
-          "${{ env.PRODUCT_NAME }}_macOS_Unsigned.pkg" \
-          "${{ env.PRODUCT_NAME }}_macOS.pkg"
+          "${{ env.PRODUCT_NAME_U }}_macOS_Unsigned.pkg" \
+          "${{ env.PRODUCT_NAME_U }}_macOS.pkg"
 
           echo "Verifying signature..."
-          pkgutil --check-signature "${{ env.PRODUCT_NAME }}_macOS.pkg"
+          pkgutil --check-signature "${{ env.PRODUCT_NAME_U }}_macOS.pkg"
 
       - name: Notarize Installer
         run: |
-          xcrun notarytool submit "${{ env.PRODUCT_NAME }}_macOS.pkg" \
+          xcrun notarytool submit "${{ env.PRODUCT_NAME_U }}_macOS.pkg" \
             --apple-id "${{ secrets.APPLE_DEVELOPER_ID }}" \
             --team-id "${{ secrets.APPLE_TEAM_ID }}" \
             --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
@@ -345,13 +343,13 @@ jobs:
 
       - name: Staple Notarization Ticket
         run: |
-          xcrun stapler staple "${{ env.PRODUCT_NAME }}_macOS.pkg"
+          xcrun stapler staple "${{ env.PRODUCT_NAME_U }}_macOS.pkg"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.PRODUCT_NAME }}-macOS
-          path: ${{ env.PRODUCT_NAME }}_macOS.pkg
+          name: ${{ env.PRODUCT_NAME_U }}-macOS
+          path: ${{ env.PRODUCT_NAME_U }}_macOS.pkg
 
       - name: Cleanup Keychain
         if: always()
