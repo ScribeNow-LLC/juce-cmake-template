@@ -210,7 +210,7 @@ jobs:
       - name: Prepare for create-dmg
         run: |
           mkdir -p dmg_staging
-          cp -Rp "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" dmg_staging/${{ env.PRODUCT_NAME }}.app
+          cp -Rp "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app" "dmg_staging/${{ env.PRODUCT_NAME }}.app"
           chmod +x "build/${{ env.TARGET_NAME }}_artefacts/Release/Standalone/${{ env.PRODUCT_NAME }}.app"
           ln -s /Applications dmg_staging/"Applications"
 
