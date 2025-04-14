@@ -1,7 +1,0 @@
-#!/bin/bash
-
-DMG_PATH="/Library/Application Support/JUCE_CMake_Plugin/AppInstaller.dmg"
-
-/usr/bin/open "$DMG_PATH"
-
-exit 0
